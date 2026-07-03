@@ -1,0 +1,228 @@
+# Didaxis Studio — Dashboard locator snapshot
+# Captured via Playwright MCP on test environment (2026-07-02)
+#
+# Notes:
+# - Authenticated dashboard content loads at `/` (root), not `/dashboard`.
+# - No data-testid attributes were found on dashboard components.
+# - Programs count (e.g. "53") is dynamic; do not hardcode in assertions.
+
+meta:
+  app: Didaxis Studio
+  environment: https://test.didaxis.studio
+  page_url: https://test.didaxis.studio/
+  page_title: Didaxis Studio
+  captured_at: "2026-07-02"
+  capture_method: Playwright MCP (browser_snapshot + locator verification)
+  login:
+    url: /login
+    email: page.getByLabel('Email')
+    password: page.getByLabel('Password')
+    submit: page.getByRole('button', { name: 'Sign In' })
+
+page:
+  main:
+    role: main
+    playwright: page.getByRole('main')
+
+header:
+  title:
+    component: Page heading
+    role: heading
+    level: 2
+    name: Dashboard
+    playwright: page.getByRole('heading', { name: 'Dashboard', level: 2 })
+  welcome:
+    component: Welcome subtitle
+    text: Welcome to Didaxis Studio
+    playwright: page.getByText('Welcome to Didaxis Studio')
+  connection_status:
+    component: Connection status badge
+    text: Connected
+    css_class: mantine-Badge-root
+    playwright:
+      preferred: page.getByText('Connected', { exact: true })
+      fallback: page.locator('.mantine-Badge-root').filter({ hasText: /connected/i })
+
+feature_cards:
+  container:
+    css_class: mantine-Card-root
+    playwright: page.getByRole('main').locator('.mantine-Card-root')
+    count: 5
+  programs:
+    index: 0
+    clickable: true
+    stat: "53"
+    title: Programs
+    subtitle: Manage academic programs
+    playwright:
+      card: page.getByRole('main').locator('.mantine-Card-root').filter({ hasText: 'Manage academic programs' })
+      by_index: page.getByRole('main').locator('.mantine-Card-root').nth(0)
+      stat: page.getByRole('main').getByText('53', { exact: true })
+      title: page.getByRole('main').getByText('Programs', { exact: true })
+      subtitle: page.getByText('Manage academic programs')
+  calendar:
+    index: 1
+    clickable: true
+    action_label: View
+    title: Calendar
+    subtitle: Schedule & drag-drop
+    playwright:
+      card: page.getByRole('main').locator('.mantine-Card-root').filter({ hasText: 'Schedule & drag-drop' })
+      by_index: page.getByRole('main').locator('.mantine-Card-root').nth(1)
+      action_label: page.getByRole('main').getByText('View', { exact: true })
+      title: page.getByRole('main').getByText('Calendar', { exact: true })
+      subtitle: page.getByText('Schedule & drag-drop')
+  validation:
+    index: 2
+    clickable: true
+    action_label: Check
+    title: Validation
+    subtitle: Check for conflicts
+    playwright:
+      card: page.getByRole('main').locator('.mantine-Card-root').filter({ hasText: 'Check for conflicts' })
+      by_index: page.getByRole('main').locator('.mantine-Card-root').nth(2)
+      action_label: page.getByRole('main').getByText('Check', { exact: true })
+      title: page.getByRole('main').getByText('Validation', { exact: true })
+      subtitle: page.getByText('Check for conflicts')
+  ai_assist:
+    index: 3
+    clickable: true
+    action_label: Open
+    title: AI Assist
+    subtitle: AI-powered editing
+    playwright:
+      card: page.getByRole('main').locator('.mantine-Card-root').filter({ hasText: 'AI-powered editing' })
+      by_index: page.getByRole('main').locator('.mantine-Card-root').nth(3)
+      action_label: page.getByRole('main').getByText('Open', { exact: true })
+      title: page.getByRole('main').getByText('AI Assist', { exact: true })
+      subtitle: page.getByText('AI-powered editing')
+
+quick_start:
+  index: 4
+  css_class: mantine-Card-root
+  heading: Quick Start
+  playwright:
+    card: page.getByRole('main').locator('.mantine-Card-root').filter({ hasText: 'Quick Start' })
+    by_index: page.getByRole('main').locator('.mantine-Card-root').nth(4)
+    heading: page.getByText('Quick Start')
+  steps:
+    - number: 1
+      text: Create a Program to define your academic program structure.
+      playwright: page.getByText(/1\. Create a Program/)
+    - number: 2
+      text: Add Courses with session templates and hour requirements.
+      playwright: page.getByText(/2\. Add Courses/)
+    - number: 3
+      text: Use the Calendar to schedule sessions via drag-and-drop.
+      playwright: page.getByText(/3\. Use the Calendar/)
+    - number: 4
+      text: Check Validation for conflicts and constraint violations.
+      playwright: page.getByText(/4\. Check Validation/)
+    - number: 5
+      text: Use AI Assist to auto-generate schedules or import curricula.
+      playwright: page.getByText(/5\. Use AI Assist/)
+
+navigation:
+  container:
+    role: navigation
+    playwright: page.getByRole('navigation')
+  brand:
+    logo:
+      role: img
+      name: Didaxis Studio
+      playwright: page.getByRole('img', { name: 'Didaxis Studio' })
+    didaxis:
+      text: Didaxis
+      playwright: page.getByText('Didaxis', { exact: true }).first()
+    studio:
+      text: Studio
+      playwright: page.getByText('Studio', { exact: true }).first()
+  items:
+    - name: Dashboard
+      icon: "📊"
+      active_on_dashboard: true
+      playwright: page.getByRole('button', { name: '📊 Dashboard' })
+    - name: Programs
+      icon: "🎓"
+      playwright: page.getByRole('button', { name: '🎓 Programs' })
+    - name: Calendar
+      icon: "📅"
+      playwright: page.getByRole('button', { name: '📅 Calendar' })
+    - name: Validation
+      icon: "✅"
+      playwright: page.getByRole('button', { name: '✅ Validation' })
+    - name: Scheduler
+      icon: "⚡"
+      playwright: page.getByRole('button', { name: '⚡ Scheduler' })
+    - name: Export
+      icon: "📤"
+      playwright: page.getByRole('button', { name: '📤 Export' })
+  settings:
+    name: Settings
+    icon: "⚙️"
+    playwright: page.getByRole('button', { name: '⚙️ Settings' })
+  user:
+    display_name: Admin
+    org: Didaxis Studio
+    avatar_initial: A
+    playwright:
+      display_name: page.getByText('Admin', { exact: true })
+      org: page.locator('nav').getByText('Didaxis Studio')
+  sign_out:
+    role: button
+    name: Sign out
+    playwright: page.getByRole('button', { name: 'Sign out' })
+
+accessibility_snapshot:
+  - generic:
+      - navigation:
+          - img "Didaxis Studio"
+          - paragraph: Didaxis
+          - paragraph: Studio
+          - button "📊 Dashboard" [active]
+          - button "🎓 Programs"
+          - button "📅 Calendar"
+          - button "✅ Validation"
+          - button "⚡ Scheduler"
+          - button "📤 Export"
+          - button "⚙️ Settings"
+          - paragraph: Admin
+          - paragraph: Didaxis Studio
+          - button "Sign out"
+      - main:
+          - heading "Dashboard" [level=2]
+          - paragraph: Welcome to Didaxis Studio
+          - generic: Connected
+          - generic [cursor=pointer]:
+              - paragraph: "53"
+              - paragraph: Programs
+              - paragraph: Manage academic programs
+          - generic [cursor=pointer]:
+              - paragraph: View
+              - paragraph: Calendar
+              - paragraph: Schedule & drag-drop
+          - generic [cursor=pointer]:
+              - paragraph: Check
+              - paragraph: Validation
+              - paragraph: Check for conflicts
+          - generic [cursor=pointer]:
+              - paragraph: Open
+              - paragraph: AI Assist
+              - paragraph: AI-powered editing
+          - paragraph: Quick Start
+          - paragraph:
+              - text: 1. Create a Program to define your academic program structure.
+              - text: 2. Add Courses with session templates and hour requirements.
+              - text: 3. Use the Calendar to schedule sessions via drag-and-drop.
+              - text: 4. Check Validation for conflicts and constraint violations.
+              - text: 5. Use AI Assist to auto-generate schedules or import curricula.
+
+locator_guidance:
+  prefer:
+    - Role-based locators (getByRole)
+    - Visible text (getByText)
+    - Card filters using unique subtitles (not titles alone)
+  avoid:
+    - Hardcoding dynamic stat values (Programs count)
+    - Title-only card filters (Quick Start duplicates Calendar/Validation/AI Assist text)
+    - Brittle Mantine CSS classes as primary selectors

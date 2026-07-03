@@ -1,41 +1,51 @@
-# Prompt Template — Test Plan 
+Write Playwright tests for creating a new program on Didaxis Studio.
 
+## App context (from manual inspection)
 
-## Prompt
+- Login page: [https://test.didaxis.studio/login](https://test.didaxis.studio/login)
 
-### Role
+  - Email field: getByLabel('Email')
 
-You are a senior QA engineer reviewing the feature described below.
+  - Password field: getByLabel('Password')
 
-### Task
+  - Sign In button: getByRole('button', { name: 'Sign In' })
 
-Create a detailed test plan for for https://demo.playwright.dev/todomvc/
+- Programs page: /programs
 
-### Acceptance Criteria
+  - "New Program" button: getByRole('button', { name: 'New Program' })
 
-User can add a todo item to the list
-User can complete an item
-User can delete item from the list
+  - Modal form:
 
-### Requirements for the test plan
+    - Program Name: getByLabel('Program Name')
 
-- All test cases must be in Gherkin
-- Cover every AC with at least one test case
-- Add edge cases the ACs don't mention
-  (boundary values, empty inputs, special characters, duplicates, max-length)
-- Add negative test cases (what should NOT happen)
-- Structure each test case as:
-  - ID (TC-001, TC-002, etc.)
-  - Title (expected behavior, not action)
-  - Preconditions
-  - Steps (numbered)
-  - Expected result
-- Group by: Positive flows, Negative flows, Edge cases
+    - Description: getByLabel('Description')
 
-### Output
+    - Create button: getByRole('button', { name: 'Create' })
 
-- Structured test plan in Markdown
-- Use real field names and values, not placeholders
-- At the end: list any ambiguities or gaps in the ACs
-- save it in the TODO_MVC folder
----
+## Credentials
+
+Use dotenv. Read email and password from process.env:
+
+- process.env.DIDAXIS_EMAIL
+
+- process.env.DIDAXIS_PASSWORD
+
+Do NOT hardcode credentials in the test file.
+
+## Test plan
+
+[Paste your Block 2 test plan for DS-1]
+
+## Requirements
+
+- TypeScript
+
+- Use Playwright locators (getByRole, getByLabel, getByText)
+
+- Login as the first step in each test (or use beforeEach)
+
+- Each test is independent
+
+- Use unique test data with Date.now() suffix
+
+- Save as tests/ds1-create-program.spec.ts
