@@ -1,8 +1,65 @@
 # DS-1 — Test Plan: Create New Academic Program
 
-**Feature:** Create new academic program  
-**Source:** DS-1_ticket_INPUT  
-**Scope:** Program creation modal (`Program Name`, `Description`), Programs page, admin access
+**Jira:** [DS-1](https://legionqaschool.atlassian.net/browse/DS-1) — Create new academic program  
+**Status:** To Do  
+**Source:** DS-1 (Jira) + Confluence Program Setup docs + live app exploration (`https://test.didaxis.studio`)  
+**Scope:** Program creation modal (`Program Name`, `Description`, optional AI Generation Config), Programs page, admin access
+
+---
+
+## Jira Acceptance Criteria
+
+**User story:** As an admin user, I want to create a new academic program so that I can begin designing its curriculum structure.
+
+```gherkin
+Scenario: Navigate to program creation form
+  Given I am logged in as admin
+  When I navigate to the Programs page
+  And I click "+ New Program"
+  Then I see the program creation form with fields: Program Name, Description
+
+Scenario: Successfully create a program
+  Given I am on the program creation form
+  When I fill in Program Name with "Web Development 2026"
+  And I fill in Description with "Full-stack web development program"
+  And I click Create
+  Then the modal closes
+  And the program list shows "Web Development 2026"
+
+Scenario: Validation prevents empty program name
+  Given I am on the program creation form
+  When I leave the Program Name field empty
+  Then the Create button is disabled
+```
+
+---
+
+## Confluence Evidence (Atlassian MCP)
+
+Pulled via Atlassian MCP from the DS Confluence space:
+
+### Architecture Overview
+- Didaxis Studio uses a **three-layer model**: Session Templates (curriculum) → Scheduled Sessions (calendar) → Assignments (student deliverables).
+- Key invariants: calendar is the live data source; MANUAL/LOCKED sessions are immovable; validation debounced at 500ms; generator is deterministic.
+- **Relevance to DS-1:** Programs are the top-level entity that anchors curriculum structure before semesters/courses/sessions are added.
+
+### Program Setup — Field Definitions
+- **Program Name:** required, max **100 characters**, unique per organization (spec).
+- **Description:** optional, max **500 characters**.
+- Create/edit modals always show Program Name + Description; **AI Generation Config** is a collapsible section (Total Hours, Default Session/Exam Hours, Target Audience, Focus Areas, Sync/Async Ratio default 70%).
+- Create button disabled when Program Name is empty; name trimmed on submit per spec.
+
+### Program Setup — Validation Rules
+- Client: empty or whitespace-only name → Create disabled / no submission.
+- Server (spec): duplicate name → 400/409; name >100 chars → 400; description >500 chars → 400.
+
+### App vs spec gaps (open defects — tests fail until fixed)
+| Spec requirement | Defect | Test | Jira |
+|---|---|---|---|
+| Unique program name | Duplicates allowed, no error | TC-009 L146 | [DS-133](https://legionqaschool.atlassian.net/browse/DS-133) |
+| Name max 100 chars | Names >100 accepted | TC-013 L218 | [DS-134](https://legionqaschool.atlassian.net/browse/DS-134) |
+| Name trimmed on submit | Spaces preserved | TC-018 L289 | [DS-135](https://legionqaschool.atlassian.net/browse/DS-135) |
+| Single submit per create | Double-click creates 2 | TC-021 L332 | [DS-136](https://legionqaschool.atlassian.net/browse/DS-136) |
 
 ---
 
@@ -20,7 +77,7 @@
 1. Navigate to the Programs page
 2. Click **+ New Program**
 
-**Expected result:** Program creation form (modal) opens with **Program Name** and **Description** fields visible and editable
+**Expected result:** Program creation modal opens with **Program Name** (placeholder `e.g. Computer Science BSc`), **Description** (placeholder `Brief description`), **Cancel**, disabled **Create**, and collapsible **▸ Show AI Generation Config** section
 
 **Priority:** High
 
@@ -30,6 +87,8 @@ Scenario: Navigate to program creation form
   When I navigate to the Programs page
   And I click "+ New Program"
   Then I see the program creation form with fields: Program Name, Description
+  And the Create button is disabled
+  And I see a collapsible "Show AI Generation Config" section
 ```
 
 ---
@@ -49,8 +108,8 @@ Scenario: Navigate to program creation form
 
 **Expected result:**
 - Modal closes
-- Program list includes **Web Development 2026**
-- Description is stored (visible in list or detail if the UI shows it)
+- Program list includes **Web Development 2026** in the first table cell
+- Description appears as a second line under the program name in the same cell
 
 **Priority:** High
 
@@ -251,39 +310,37 @@ Scenario: Closing the modal without saving does not create a program
 
 ---
 
-### TC-009 — Duplicate program name is rejected or handled consistently
+### TC-009 — Duplicate program name is rejected (Confluence Validation Rules)
 
-**Title:** Creating a program with an existing name does not silently duplicate
+**Title:** Creating a program with an existing name shows validation error and does not duplicate
 
 **Preconditions:**
 - User is logged in as admin
-- A program named **Web Development 2026** already exists
+- A program with the target name already exists
 
 **Steps:**
-1. Open program creation form
-2. Enter **Web Development 2026** in **Program Name**
-3. Enter `Duplicate attempt description` in **Description**
+1. Create a program with a unique name
+2. Open program creation form again
+3. Enter the **same Program Name** and a different **Description**
 4. Click **Create**
 
-**Expected result (one of — document actual product behavior):
-- Error message indicating duplicate name, **or**
-- Create blocked with validation message, **or**
-- Duplicate allowed but clearly distinguished (if product allows duplicates)
-
-Program list behavior must match the defined business rule
+**Expected result (per Confluence Program Setup — Validation Rules):**
+- Server returns 400/409
+- User sees a duplicate-name validation or error message
+- Program list contains **exactly one** entry for that name
 
 **Priority:** High
 
 ```gherkin
-Scenario: Duplicate program name is handled per business rules
+Scenario: Duplicate program name is rejected
   Given I am logged in as admin
-  And a program named "Web Development 2026" already exists
+  And a program with a given name already exists
   And I am on the program creation form
-  When I fill in Program Name with "Web Development 2026"
+  When I fill in Program Name with the existing name
   And I fill in Description with "Duplicate attempt description"
   And I click Create
-  Then the system responds with a clear validation or error message
-  And the program list does not contain an unintended duplicate entry
+  Then the program list contains exactly one entry with that name
+  And I see a duplicate-name validation or error message
 ```
 
 ---
@@ -357,21 +414,21 @@ Scenario: Minimum length program name boundary
 
 ---
 
-### TC-012 — Program Name at maximum allowed length
+### TC-012 — Program Name at maximum allowed length (100 characters)
 
-**Title:** Program Name at max length is accepted or clearly rejected
+**Title:** Program Name at 100 characters is accepted
 
 **Preconditions:**
 - User is logged in as admin
 - Program creation form is open
-- Max length for Program Name is known (e.g. 100 characters — adjust to spec)
+- Max length for Program Name is **100 characters** (Confluence Field Definitions)
 
 **Steps:**
-1. Enter a 100-character name: `Advanced Web Development and Cloud Architecture Specialization Program Track 2026 Edition Alpha`
+1. Enter a unique 100-character Program Name
 2. Enter `Max length name test` in **Description**
 3. Click **Create**
 
-**Expected result:** Program is created with full name visible in list, or clear max-length validation if 100 exceeds limit
+**Expected result:** Program is created with full name visible in list
 
 **Priority:** Medium
 
@@ -379,44 +436,43 @@ Scenario: Minimum length program name boundary
 Scenario: Program name at maximum allowed length
   Given I am logged in as admin
   And I am on the program creation form
-  When I fill in Program Name with "Advanced Web Development and Cloud Architecture Specialization Program Track 2026 Edition Alpha"
+  When I fill in Program Name with a unique string of 100 characters
   And I fill in Description with "Max length name test"
   And I click Create
   Then the modal closes
   And the program list shows the full program name
-  Or I see a validation message if the name exceeds the maximum length
 ```
 
 ---
 
-### TC-013 — Program Name exceeds maximum length
+### TC-013 — Program Name exceeding 100 characters is rejected
 
-**Title:** Over-max Program Name is blocked
+**Title:** Over-max Program Name is blocked with validation error
 
 **Preconditions:**
 - User is logged in as admin
 - Program creation form is open
 
 **Steps:**
-1. Enter a 256-character Program Name (or one character beyond documented max)
+1. Enter a Program Name longer than 100 characters
 2. Enter `Over max length test` in **Description**
-3. Attempt to click **Create**
+3. Click **Create**
 
-**Expected result:**
-- **Create** disabled or validation error shown
-- No truncated program saved without user awareness
+**Expected result (Confluence Validation Rules):**
+- Program is **not** created
+- Validation error shown (max 100 characters)
 
 **Priority:** Medium
 
 ```gherkin
-Scenario: Program name exceeding maximum length is rejected
+Scenario: Program name exceeding 100 characters is rejected
   Given I am logged in as admin
   And I am on the program creation form
-  When I fill in Program Name with a string of 256 characters
+  When I fill in Program Name with a string longer than 100 characters
   And I fill in Description with "Over max length test"
   And I click Create
-  Then I see a validation message for Program Name
-  And no new program is added to the program list
+  Then the program list does not show the over-length name
+  And I see a validation message for Program Name
 ```
 
 ---
@@ -434,20 +490,22 @@ Scenario: Program name exceeding maximum length is rejected
 2. Leave **Description** empty
 3. Observe **Create** button and submit if enabled
 
-**Expected result (per spec):
-- If optional: program created; list shows **Mobile App Development 2026**
-- If required: **Create** disabled or validation error; program not created
+**Expected result (observed on test.didaxis.studio):**
+- **Description is optional:** Create enabled when name is filled
+- Program created; list shows program name only (no description line when empty)
 
 **Priority:** High
 
 ```gherkin
-Scenario: Empty description boundary behavior
+Scenario: Empty description is allowed
   Given I am logged in as admin
   And I am on the program creation form
   When I fill in Program Name with "Mobile App Development 2026"
   And I leave the Description field empty
-  Then the Create button is disabled
-  Or I can click Create and the program list shows "Mobile App Development 2026"
+  Then the Create button is enabled
+  When I click Create
+  Then the modal closes
+  And the program list shows "Mobile App Development 2026"
 ```
 
 ---
@@ -462,7 +520,7 @@ Scenario: Empty description boundary behavior
 
 **Steps:**
 1. Enter `UX Design Bootcamp` in **Program Name**
-2. Enter a 2000-character Description (or documented max)
+2. Enter a 500-character Description (Confluence max)
 3. Click **Create**
 
 **Expected result:** Program created; Description stored without silent truncation (or validation if over limit)
@@ -474,7 +532,7 @@ Scenario: Description at maximum allowed length
   Given I am logged in as admin
   And I am on the program creation form
   When I fill in Program Name with "UX Design Bootcamp"
-  And I fill in Description with a string of 2000 characters
+  And I fill in Description with a string of 500 characters
   And I click Create
   Then the modal closes
   And the program list shows "UX Design Bootcamp"
@@ -557,22 +615,21 @@ Scenario: Unicode and emoji in program fields
 2. Fill **Description** with `Whitespace trimming test`
 3. Click **Create**
 
-**Expected result (document actual behavior):
-- Trimmed to `Web Development 2026`, **or**
-- Stored with spaces as entered
-- No duplicate confusion with existing **Web Development 2026**
+**Expected result (Confluence Field Definitions — trimmed on submit):**
+- Stored name is **trimmed** to `Web Development 2026` (no leading/trailing spaces)
+- Padded name does **not** appear as a separate list entry
 
 **Priority:** Medium
 
 ```gherkin
-Scenario: Leading and trailing whitespace in program name
+Scenario: Leading and trailing whitespace in program name is trimmed
   Given I am logged in as admin
   And I am on the program creation form
   When I fill in Program Name with "   Web Development 2026   "
   And I fill in Description with "Whitespace trimming test"
   And I click Create
   Then the program list shows "Web Development 2026"
-  Or the program list shows the name exactly as entered including spaces
+  And the program list does not show the name with leading or trailing spaces
 ```
 
 ---
@@ -654,7 +711,7 @@ Scenario: HTML injection in description is sanitized
 2. Enter `AWS and Azure fundamentals` in **Description**
 3. Double-click **Create** quickly
 
-**Expected result:** Exactly one **Cloud Computing 2026** entry in the program list
+**Expected result:** Exactly one **Cloud Computing 2026** entry in the program list (Create disabled or guarded during submit)
 
 **Priority:** Medium
 
@@ -706,38 +763,158 @@ Scenario: Multi-line description is preserved
 
 ---
 
+### TC-023 — AI Generation Config section expands and collapses
+
+**Title:** Collapsible AI config reveals optional generation fields
+
+**Preconditions:**
+- User is logged in as admin
+- Program creation form is open
+
+**Steps:**
+1. Click **▸ Show AI Generation Config**
+2. Observe expanded fields
+3. Click **▾ Hide AI Generation Config**
+
+**Expected result:**
+- Expanded section shows Total Program Hours, Default Session Hours (default 4), Default Exam Hours (default 3), Target Audience, Focus Areas, Sync/Async Ratio slider (70% default)
+- Toggle button label switches between **Show** and **Hide AI Generation Config**
+
+**Priority:** Medium
+
+```gherkin
+Scenario: AI Generation Config toggles visibility
+  Given I am logged in as admin
+  And I am on the program creation form
+  When I click "Show AI Generation Config"
+  Then I see Total Program Hours and Default Session Hours fields
+  When I click "Hide AI Generation Config"
+  Then the toggle shows "Show AI Generation Config"
+```
+
+---
+
+### TC-024 — Programs page table layout
+
+**Title:** Program list shows name and description in a single Program column
+
+**Preconditions:**
+- User is logged in as admin
+- Programs page is open
+
+**Steps:**
+1. Observe page heading and **+ New Program** button
+2. Create a program with name and description
+3. Inspect the table row
+
+**Expected result:**
+- Table has a **Program** column header
+- Row first cell shows program name (paragraph) and description (second paragraph when provided)
+- Edit/Delete icon buttons appear in the actions cell
+
+**Priority:** Medium
+
+```gherkin
+Scenario: Program list table layout
+  Given I am logged in as admin
+  When I navigate to the Programs page
+  Then I see a "Programs" heading and a "+ New Program" button
+  And I see a table with a "Program" column
+  When I create a program with a name and description
+  Then the program name and description appear in the first table cell
+```
+
+---
+
+### TC-025 — Modal X button closes without saving
+
+**Title:** Header close button discards unsaved data
+
+**Preconditions:**
+- User is logged in as admin
+- Program creation form is open with data entered
+
+**Steps:**
+1. Fill **Program Name** with `X Close Draft`
+2. Click the **X** button in the modal header
+
+**Expected result:** Modal closes; program is not created
+
+**Priority:** Medium
+
+```gherkin
+Scenario: Modal X button closes without saving
+  Given I am logged in as admin
+  And I am on the program creation form
+  When I fill in Program Name with "X Close Draft"
+  And I click the modal close button
+  Then the modal closes
+  And the program list does not show "X Close Draft"
+```
+
+---
+
+### TC-026 — Program without description shows name-only row
+
+**Title:** Empty description omits second line in list cell
+
+**Preconditions:**
+- User is logged in as admin
+- Program creation form is open
+
+**Steps:**
+1. Enter a unique program name
+2. Leave **Description** empty
+3. Click **Create**
+
+**Expected result:** Program row shows only the name paragraph (no description line)
+
+**Priority:** Low
+
+```gherkin
+Scenario: Program without description shows name only
+  Given I am logged in as admin
+  And I am on the program creation form
+  When I fill in Program Name with a unique name
+  And I leave Description empty
+  And I click Create
+  Then the program list row shows only the program name
+```
+
+---
+
 ## Coverage Matrix
 
 | Acceptance criterion | Test cases |
 |----------------------|------------|
-| Navigate to form; fields visible | TC-001 |
-| Successful create; modal closes; list updated | TC-002, TC-004 |
+| Navigate to form; fields visible | TC-001, TC-023, TC-024 |
+| Successful create; modal closes; list updated | TC-002, TC-003, TC-004, TC-024, TC-026 |
 | Empty Program Name → Create disabled | TC-005, TC-006, TC-019 |
 
 ---
 
 ## Ambiguities and Gaps in the Acceptance Criteria
 
-1. **Description required?** AC only validates empty **Program Name**. Whether **Description** is optional, required, or has its own validation is unspecified (TC-014).
+1. **Description required?** AC only validates empty **Program Name**. App allows empty Description (TC-014, TC-026); Confluence confirms optional.
 
-2. **Field constraints missing** — No max/min length, character set, or trim rules for **Program Name** or **Description** (TC-011–TC-013, TC-015, TC-018, TC-019).
+2. **Field constraints** — Confluence defines max 100/500 chars; app currently accepts longer values (TC-012, TC-013, TC-015).
 
-3. **Duplicate names** — No rule for duplicate **Program Name** (TC-009).
+3. **Duplicate names** — Confluence expects server rejection; app allows duplicates without error (TC-009). Known bugs: DS-12, DS-13, SS-25.
 
-4. **Modal dismiss behavior** — Cancel, Escape, click-outside, and unsaved-data handling are not defined (TC-008).
+4. **Modal dismiss behavior** — Cancel, X, and Escape discard unsaved data (TC-008, TC-025).
 
-5. **Success feedback** — AC says modal closes and list updates, but not toast/message, sort order, or default list position for new programs.
+5. **Success feedback** — No toast; list updates in place without reload (TC-004).
 
-6. **Description visibility** — AC does not say whether **Description** appears in the list, detail view, or tooltip after create.
+6. **Description visibility** — Description shown as second paragraph in Program table cell when provided (TC-002, TC-024).
 
-7. **Authorization scope** — "Logged in as admin" is stated; non-admin behavior and role matrix are not in AC (TC-007).
+7. **Authorization scope** — AC states admin; non-admin blocked when credentials available (TC-007).
 
-8. **Error handling** — Network/API failures, timeout, and retry behavior are not covered in AC (TC-010).
+8. **Error handling** — API failures keep modal open with entered values (TC-010).
 
-9. **Create button state** — AC only covers empty name; unclear if disabled during submit, after validation errors, or when only whitespace is entered.
+9. **Create button state** — Disabled for empty/whitespace-only name; not disabled during in-flight submit (TC-021).
 
-10. **UI labels and actions** — Assumed labels **+ New Program**, **Create**, and modal pattern; cancel button label and alternate entry points (URL deep link) not specified.
+10. **UI labels** — Button is **+ New Program**; modal title **New Program**; dialog role `New Program`.
 
-11. **Data persistence** — No AC for refresh persistence, edit/delete after create, or audit fields (created by, created at).
+11. **AI Generation Config** — Collapsible optional section not mentioned in Jira AC (TC-023).
 
-12. **Concurrent creation** — Two admins creating the same name at the same time is not addressed.
+12. **Spec vs app** — Name trim, uniqueness, and max-length differ from Confluence (see table above).

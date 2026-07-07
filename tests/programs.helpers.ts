@@ -43,7 +43,7 @@ export async function navigateToPrograms(page: Page) {
 }
 
 export async function openNewProgramModal(page: Page) {
-  await page.getByRole('button', { name: 'New Program' }).click();
+  await page.getByRole('button', { name: '+ New Program' }).click();
   const modal = programModal(page);
   await expect(modal).toBeVisible();
   await expect(modal.getByLabel('Program Name')).toBeVisible();
@@ -73,11 +73,24 @@ export async function seedProgram(page: Page, programName: string, description: 
 }
 
 export function programInList(page: Page, programName: string) {
-  return page.getByRole('row').filter({ has: page.getByText(programName, { exact: true }) });
+  return page.getByRole('row').filter({
+    has: page.locator('td').first().getByText(programName, { exact: true }),
+  });
 }
 
 export function programDescriptionInList(page: Page, programName: string, description: string) {
-  return programInList(page, programName).getByText(description);
+  return programInList(page, programName).locator('td').first().getByText(description);
+}
+
+export async function closeProgramModal(page: Page) {
+  const modal = programModal(page);
+  const cancelButton = modal.getByRole('button', { name: 'Cancel' });
+
+  if (await cancelButton.isVisible()) {
+    await cancelButton.click();
+  } else {
+    await page.keyboard.press('Escape');
+  }
 }
 
 export async function countProgramsNamed(page: Page, programName: string) {
@@ -130,7 +143,7 @@ export async function cancelDelete(page: Page, programName: string) {
 }
 
 export async function expectNonAdminProgramsAccessDenied(page: Page) {
-  const newProgramButton = page.getByRole('button', { name: 'New Program' });
+  const newProgramButton = page.getByRole('button', { name: '+ New Program' });
   const accessDenied = page.getByText(/access denied|forbidden|not authorized|permission/i);
 
   if (await newProgramButton.isVisible()) {

@@ -1,89 +1,24 @@
-import { test, expect, Page } from '@playwright/test';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
-
-const BASE_URL = process.env.DIDAXIS_URL ?? 'https://test.didaxis.studio';
-const LOGIN_URL = `${BASE_URL}/login`;
-const PROGRAMS_URL = `${BASE_URL}/programs`;
-
-const adminEmail = process.env.DIDAXIS_EMAIL;
-const adminPassword = process.env.DIDAXIS_PASSWORD;
-const nonAdminEmail = process.env.DIDAXIS_NONADMIN_EMAIL;
-const nonAdminPassword = process.env.DIDAXIS_NONADMIN_PASSWORD;
-
-function uniqueName(base: string): string {
-  return `${base}-${Date.now()}`;
-}
-
-function programModal(page: Page) {
-  return page.getByRole('dialog', { name: 'New Program' });
-}
-
-async function login(page: Page, email: string, password: string) {
-  await page.goto(LOGIN_URL);
-  await page.getByLabel('Email').fill(email);
-  await page.getByLabel('Password').fill(password);
-  await page.getByRole('button', { name: 'Sign In' }).click();
-  await expect(page).not.toHaveURL(/\/login$/);
-}
-
-async function loginAsAdmin(page: Page) {
-  await login(page, adminEmail!, adminPassword!);
-}
-
-async function navigateToPrograms(page: Page) {
-  await page.goto(PROGRAMS_URL);
-  await expect(page).toHaveURL(/\/programs/);
-}
-
-async function openNewProgramModal(page: Page) {
-  await page.getByRole('button', { name: 'New Program' }).click();
-  const modal = programModal(page);
-  await expect(modal).toBeVisible();
-  await expect(modal.getByLabel('Program Name')).toBeVisible();
-  await expect(modal.getByLabel('Description')).toBeVisible();
-}
-
-async function fillProgramForm(page: Page, programName: string, description: string) {
-  const modal = programModal(page);
-  await modal.getByLabel('Program Name').fill(programName);
-  await modal.getByLabel('Description').fill(description);
-}
-
-async function clickCreate(page: Page) {
-  await programModal(page).getByRole('button', { name: 'Create' }).click();
-}
-
-async function createProgram(page: Page, programName: string, description: string) {
-  await fillProgramForm(page, programName, description);
-  await clickCreate(page);
-  await expect(programModal(page)).not.toBeVisible();
-}
-
-function programDescriptionInList(page: Page, programName: string, description: string) {
-  return programInList(page, programName).getByText(description);
-}
-
-async function closeProgramModal(page: Page) {
-  const modal = programModal(page);
-  const cancelButton = modal.getByRole('button', { name: 'Cancel' });
-
-  if (await cancelButton.isVisible()) {
-    await cancelButton.click();
-  } else {
-    await page.keyboard.press('Escape');
-  }
-}
-
-function programInList(page: Page, programName: string) {
-  return page.getByRole('row').filter({ has: page.getByText(programName, { exact: true }) });
-}
-
-async function countProgramsNamed(page: Page, programName: string) {
-  return programInList(page, programName).count();
-}
+import { test, expect } from '@playwright/test';
+import {
+  adminEmail,
+  adminPassword,
+  nonAdminEmail,
+  nonAdminPassword,
+  uniqueName,
+  login,
+  loginAsAdmin,
+  navigateToPrograms,
+  openNewProgramModal,
+  fillProgramForm,
+  clickCreate,
+  createProgram,
+  programModal,
+  programInList,
+  programDescriptionInList,
+  countProgramsNamed,
+  closeProgramModal,
+  expectNonAdminProgramsAccessDenied,
+} from './programs.helpers';
 
 test.beforeEach(async ({ page }) => {
   test.skip(!adminEmail || !adminPassword, 'DIDAXIS_EMAIL and DIDAXIS_PASSWORD must be set in .env');
@@ -96,10 +31,14 @@ test('TC-001: admin sees Program Name and Description on the creation form', asy
   await openNewProgramModal(page);
 
   const modal = programModal(page);
+  await expect(modal.getByRole('heading', { name: 'New Program' })).toBeVisible();
   await expect(modal.getByLabel('Program Name')).toBeEditable();
+  await expect(modal.getByLabel('Program Name')).toHaveAttribute('placeholder', 'e.g. Computer Science BSc');
   await expect(modal.getByLabel('Description')).toBeEditable();
-  await expect(modal.getByRole('button', { name: 'Create' })).toBeVisible();
+  await expect(modal.getByLabel('Description')).toHaveAttribute('placeholder', 'Brief description');
+  await expect(modal.getByRole('button', { name: 'Create' })).toBeDisabled();
   await expect(modal.getByRole('button', { name: 'Cancel' })).toBeVisible();
+  await expect(modal.getByRole('button', { name: '▸ Show AI Generation Config' })).toBeVisible();
 });
 
 // TC-002 — Program is created and appears in the list
@@ -108,7 +47,6 @@ test('TC-002: valid program is saved and shown in the program list', async ({ pa
   const description = 'Full-stack web development program';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programInList(page, programName)).toBeVisible();
@@ -121,7 +59,6 @@ test('TC-003: program is created when both fields contain valid text', async ({ 
   const description = 'Introduction to statistics and machine learning';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programModal(page)).not.toBeVisible();
@@ -134,7 +71,6 @@ test('TC-004: program list updates immediately after successful creation', async
   const description = 'Network security and ethical hacking basics';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(page).toHaveURL(/\/programs/);
@@ -175,18 +111,8 @@ test('TC-007: non-admin users cannot create programs', async ({ page }) => {
   );
 
   await login(page, nonAdminEmail!, nonAdminPassword!);
-  await page.goto(PROGRAMS_URL);
-
-  const newProgramButton = page.getByRole('button', { name: 'New Program' });
-  const accessDenied = page.getByText(/access denied|forbidden|not authorized|permission/i);
-
-  if (await newProgramButton.isVisible()) {
-    await expect(newProgramButton).toBeDisabled();
-  } else if (await accessDenied.isVisible()) {
-    await expect(accessDenied).toBeVisible();
-  } else {
-    await expect(page).not.toHaveURL(/\/programs/);
-  }
+  await page.goto(`${process.env.DIDAXIS_URL ?? 'https://test.didaxis.studio'}/programs`);
+  await expectNonAdminProgramsAccessDenied(page);
 });
 
 // TC-008 — Closing modal without saving does not create a program
@@ -203,23 +129,21 @@ test('TC-008: cancel/close discards unsaved program data', async ({ page }) => {
   await expect(programInList(page, programName)).not.toBeVisible();
 });
 
-// TC-009 — Duplicate program name is allowed and creates another entry
-test('TC-009: duplicate program name creates another program entry', async ({ page }) => {
+// TC-009 — Duplicate program name is rejected (Confluence Validation Rules)
+test('TC-009: duplicate program name is rejected with validation error', async ({ page }) => {
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
   const duplicateDescription = 'Duplicate attempt description';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
   await expect(programInList(page, programName)).toHaveCount(1);
 
   await openNewProgramModal(page);
-  await createProgram(page, programName, duplicateDescription);
-
+  await fillProgramForm(page, programName, duplicateDescription);
+  await clickCreate(page);
   await expect(programModal(page)).not.toBeVisible();
-  await expect(await countProgramsNamed(page, programName)).toBe(2);
-  await expect(programDescriptionInList(page, programName, duplicateDescription)).toBeVisible();
+  await expect(programInList(page, programName)).toHaveCount(1);
 });
 
 // TC-010 — Server/API failure does not show false success
@@ -257,37 +181,38 @@ test('TC-011: single-character Program Name is accepted', async ({ page }) => {
   const description = 'Single character name test';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programModal(page)).not.toBeVisible();
   await expect(programInList(page, programName)).toBeVisible();
 });
 
-// TC-012 — Program Name at maximum allowed length
-test('TC-012: program name at maximum allowed length is accepted', async ({ page }) => {
-  const maxLengthName = uniqueName(
-    'Advanced Web Development and Cloud Architecture Specialization Program Track 2026 Edition Alpha',
-  );
+// TC-012 — Program Name at maximum allowed length (100 chars per Confluence spec)
+test('TC-012: program name at 100 characters is accepted', async ({ page }) => {
+  const suffix = String(Date.now());
+  const baseName = 'A'.repeat(Math.max(1, 100 - suffix.length - 1));
+  const maxLengthName = `${baseName}-${suffix}`;
   const description = 'Max length name test';
 
+  expect(maxLengthName.length).toBeLessThanOrEqual(100);
+
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, maxLengthName, description);
 
   await expect(programInList(page, maxLengthName).first()).toBeVisible();
 });
 
-// TC-013 — Program Name exceeding 256 characters is accepted (no client-side max)
-test('TC-013: program name exceeding 256 characters is accepted', async ({ page }) => {
-  const overMaxName = uniqueName('X'.repeat(240));
+// TC-013 — Program Name exceeding 100 characters is rejected (Confluence Field Definitions)
+test('TC-013: program name exceeding 100 characters is rejected', async ({ page }) => {
+  const overMaxName = uniqueName('X'.repeat(120));
   const description = 'Over max length test';
 
   await navigateToPrograms(page);
   await openNewProgramModal(page);
-  await createProgram(page, overMaxName, description);
-
-  await expect(programInList(page, overMaxName).first()).toBeVisible();
+  await fillProgramForm(page, overMaxName, description);
+  await clickCreate(page);
+  await expect(programModal(page)).not.toBeVisible();
+  await expect(programInList(page, overMaxName)).toHaveCount(0);
 });
 
 // TC-014 — Empty Description is allowed
@@ -309,14 +234,14 @@ test('TC-014: program can be created with empty Description', async ({ page }) =
 // TC-015 — Description at maximum allowed length
 test('TC-015: long Description is stored correctly', async ({ page }) => {
   const programName = uniqueName('UX Design Bootcamp');
-  const description = 'D'.repeat(2000);
+  const description = 'D'.repeat(500);
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programModal(page)).not.toBeVisible();
   await expect(programInList(page, programName)).toBeVisible();
+  await expect(programDescriptionInList(page, programName, description)).toBeVisible();
 });
 
 // TC-016 — Special characters in Program Name
@@ -325,7 +250,6 @@ test('TC-016: program name with special characters is handled safely', async ({ 
   const description = 'Languages: C++, C#, and scripting';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programModal(page)).not.toBeVisible();
@@ -338,7 +262,6 @@ test('TC-017: unicode Program Name and Description render correctly', async ({ p
   const description = 'Multilingual curriculum 🎓';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programModal(page)).not.toBeVisible();
@@ -346,18 +269,18 @@ test('TC-017: unicode Program Name and Description render correctly', async ({ p
   await expect(programDescriptionInList(page, programName, description)).toBeVisible();
 });
 
-// TC-018 — Leading and trailing whitespace in Program Name
-test('TC-018: leading and trailing whitespace in Program Name is stored as entered', async ({ page }) => {
+// TC-018 — Leading and trailing whitespace in Program Name is trimmed on submit
+test('TC-018: leading and trailing whitespace in Program Name is trimmed on submit', async ({ page }) => {
   const trimmedName = uniqueName('Web Development 2026');
   const paddedName = `   ${trimmedName}   `;
   const description = 'Whitespace trimming test';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, paddedName, description);
 
   await expect(programModal(page)).not.toBeVisible();
-  await expect(programInList(page, paddedName)).toBeVisible();
+  await expect(programInList(page, trimmedName)).toBeVisible();
+  await expect(programInList(page, paddedName)).not.toBeVisible();
 });
 
 // TC-019 — Program Name with only whitespace
@@ -381,7 +304,6 @@ test('TC-020: malicious input in Description does not execute in UI', async ({ p
   });
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programModal(page)).not.toBeVisible();
@@ -389,8 +311,8 @@ test('TC-020: malicious input in Description does not execute in UI', async ({ p
   expect(dialogTriggered).toBe(false);
 });
 
-// TC-021 — Double-click Create submits twice (current app behavior)
-test('TC-021: double-click Create can create duplicate program entries', async ({ page }) => {
+// TC-021 — Double-click Create must not create duplicate programs
+test('TC-021: double-click Create creates exactly one program entry', async ({ page }) => {
   const programName = uniqueName('Cloud Computing 2026');
   const description = 'AWS and Azure fundamentals';
 
@@ -399,8 +321,9 @@ test('TC-021: double-click Create can create duplicate program entries', async (
   await fillProgramForm(page, programName, description);
   await programModal(page).getByRole('button', { name: 'Create' }).dblclick();
   await expect(programModal(page)).not.toBeVisible();
+  await expect(page.getByRole('table')).toBeVisible();
 
-  await expect(await countProgramsNamed(page, programName)).toBe(2);
+  await expect.poll(async () => countProgramsNamed(page, programName), { timeout: 15000 }).toBe(1);
 });
 
 // TC-022 — Newline characters in Description
@@ -409,9 +332,71 @@ test('TC-022: multi-line Description is preserved', async ({ page }) => {
   const description = 'Week 1: CI/CD basics\nWeek 2: Kubernetes\nWeek 3: Monitoring';
 
   await navigateToPrograms(page);
-  await openNewProgramModal(page);
   await createProgram(page, programName, description);
 
   await expect(programModal(page)).not.toBeVisible();
   await expect(programInList(page, programName)).toBeVisible();
+});
+
+// TC-023 — AI Generation Config section expands and collapses
+test('TC-023: AI Generation Config section expands and collapses', async ({ page }) => {
+  await navigateToPrograms(page);
+  await openNewProgramModal(page);
+
+  const modal = programModal(page);
+  await modal.getByRole('button', { name: '▸ Show AI Generation Config' }).click();
+
+  await expect(modal.getByLabel('Total Program Hours')).toBeVisible();
+  await expect(modal.getByLabel('Default Session Hours')).toHaveValue('4');
+  await expect(modal.getByLabel('Default Exam Hours')).toHaveValue('3');
+  await expect(modal.getByLabel('Target Audience')).toBeVisible();
+  await expect(modal.getByLabel('Focus Areas')).toBeVisible();
+  await expect(modal.getByText(/Sync\/Async Ratio:/)).toBeVisible();
+
+  await modal.getByRole('button', { name: '▾ Hide AI Generation Config' }).click();
+  await expect(modal.getByRole('button', { name: '▸ Show AI Generation Config' })).toBeVisible();
+});
+
+// TC-024 — Programs page table layout
+test('TC-024: programs page shows table with program name and description', async ({ page }) => {
+  const programName = uniqueName('Table Layout Test');
+  const description = 'Verifies list cell layout';
+
+  await navigateToPrograms(page);
+  await expect(page.getByRole('heading', { name: 'Programs', level: 2 })).toBeVisible();
+  await expect(page.getByRole('button', { name: '+ New Program' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Program' })).toBeVisible();
+
+  await createProgram(page, programName, description);
+
+  const row = programInList(page, programName);
+  await expect(row.locator('td').first().getByText(programName, { exact: true })).toBeVisible();
+  await expect(programDescriptionInList(page, programName, description)).toBeVisible();
+});
+
+// TC-025 — Modal X button closes without saving
+test('TC-025: modal X button closes without saving', async ({ page }) => {
+  const programName = uniqueName('X Close Draft');
+
+  await navigateToPrograms(page);
+  await openNewProgramModal(page);
+  await programModal(page).getByLabel('Program Name').fill(programName);
+  await programModal(page).getByRole('banner').locator('button').click();
+
+  await expect(programModal(page)).not.toBeVisible();
+  await expect(programInList(page, programName)).not.toBeVisible();
+});
+
+// TC-026 — Program without description shows name-only row
+test('TC-026: program without description shows name-only row', async ({ page }) => {
+  const programName = uniqueName('Name Only Program');
+
+  await navigateToPrograms(page);
+  await openNewProgramModal(page);
+  await programModal(page).getByLabel('Program Name').fill(programName);
+  await clickCreate(page);
+
+  const row = programInList(page, programName);
+  await expect(row).toBeVisible();
+  await expect(row.locator('td').first().locator('p')).toHaveCount(1);
 });
