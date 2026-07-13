@@ -67,6 +67,36 @@ export async function createProgram(page: Page, programName: string, description
   await expect(programModal(page)).not.toBeVisible();
 }
 
+/** Wait for a successful POST /api/programs create response. */
+export function waitForProgramCreateResponse(page: Page) {
+  return page.waitForResponse(
+    (res) =>
+      /\/api\/programs\/?(\?|$)/.test(new URL(res.url()).pathname) &&
+      res.request().method() === 'POST' &&
+      res.ok(),
+  );
+}
+
+export async function programIdFromCreateResponse(response: { json: () => Promise<any> }): Promise<string> {
+  const body = await response.json();
+  const id = body?.data?.id ?? body?.id;
+  if (!id || typeof id !== 'string') {
+    throw new Error(`Create response missing program id: ${JSON.stringify(body).slice(0, 200)}`);
+  }
+  return id;
+}
+
+/** Create a program via UI and return its UUID from the POST response. */
+export async function createProgramReturningId(
+  page: Page,
+  programName: string,
+  description: string,
+): Promise<string> {
+  const pending = waitForProgramCreateResponse(page);
+  await createProgram(page, programName, description);
+  return programIdFromCreateResponse(await pending);
+}
+
 export async function seedProgram(page: Page, programName: string, description: string) {
   await navigateToPrograms(page);
   await createProgram(page, programName, description);
