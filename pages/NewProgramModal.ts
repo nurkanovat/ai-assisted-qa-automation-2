@@ -71,4 +71,20 @@ export class NewProgramModal {
   async hideAiConfig(): Promise<void> {
     await this.hideAiConfigButton.click();
   }
+
+  /** CSS selector for axe `.include()`, derived from the dialog locator's ARIA attributes. */
+  async axeIncludeSelector(): Promise<string> {
+    const ariaLabel = await this.dialog.getAttribute('aria-label');
+    if (ariaLabel) {
+      const escaped = ariaLabel.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+      return `[role="dialog"][aria-label="${escaped}"]`;
+    }
+
+    const labelledBy = await this.dialog.getAttribute('aria-labelledby');
+    if (labelledBy) {
+      return `[role="dialog"][aria-labelledby="${labelledBy}"]`;
+    }
+
+    throw new Error('New Program dialog lacks aria-label or aria-labelledby for axe scoping');
+  }
 }
