@@ -18,7 +18,18 @@ jobs:
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
     - name: Run Playwright tests
-      run: npx playwright test
+      env:
+        DIDAXIS_URL: ${{ secrets.DIDAXIS_URL }}
+        DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
+        DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
+        DIDAXIS_NONADMIN_EMAIL: ${{ secrets.DIDAXIS_NONADMIN_EMAIL }}
+        DIDAXIS_NONADMIN_PASSWORD: ${{ secrets.DIDAXIS_NONADMIN_PASSWORD }}
+      run: |
+        if [ -z "$DIDAXIS_EMAIL" ] || [ -z "$DIDAXIS_PASSWORD" ]; then
+          echo "::error::Configure DIDAXIS_EMAIL and DIDAXIS_PASSWORD in GitHub repository secrets (Settings → Secrets and variables → Actions)."
+          exit 1
+        fi
+        npx playwright test
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:

@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { LoginPage } from '../pages/LoginPage';
+import { ProgramsPage } from '../pages/ProgramsPage';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -17,8 +18,9 @@ setup('authenticate', async ({ page }) => {
   const loginPage = new LoginPage(page);
   await loginPage.login(email!, password!);
   await expect(loginPage.signOutButton).toBeVisible();
-  await page.goto('/programs');
-  await page.waitForURL('**/programs');
+
+  const programs = new ProgramsPage(page);
+  await programs.goto();
 
   fs.mkdirSync(path.dirname(authFile), { recursive: true });
   await page.context().storageState({ path: authFile });
