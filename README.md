@@ -20,7 +20,7 @@ Playwright end-to-end tests for Didaxis Studio.
 
 ## GitHub Actions
 
-The **E2E Tests** workflow (`.github/workflows/e2e.yml`) runs on push to `main`, on pull requests, and on demand via **Run workflow**. It needs these repository secrets (**Settings → Secrets and variables → Actions**):
+The **E2E Tests** workflow (`.github/workflows/e2e.yml`) runs on push to `main`, on pull requests, on a daily schedule (10:00 UTC), and on demand via **Run workflow**. It needs these repository secrets (**Settings → Secrets and variables → Actions**):
 
 | Secret | Required |
 |--------|----------|
