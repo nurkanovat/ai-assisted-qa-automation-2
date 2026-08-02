@@ -15,12 +15,20 @@ jobs:
       DIDAXIS_EMAIL: ${{ secrets.DIDAXIS_EMAIL }}
       DIDAXIS_PASSWORD: ${{ secrets.DIDAXIS_PASSWORD }}
       DIDAXIS_API_TOKEN: ${{ secrets.DIDAXIS_API_TOKEN }}
+      DIDAXIS_NONADMIN_EMAIL: ${{ secrets.DIDAXIS_NONADMIN_EMAIL }}
+      DIDAXIS_NONADMIN_PASSWORD: ${{ secrets.DIDAXIS_NONADMIN_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
+      - name: Verify required secrets
+        run: |
+          if [ -z "$DIDAXIS_EMAIL" ] || [ -z "$DIDAXIS_PASSWORD" ]; then
+            echo "::error::Add DIDAXIS_EMAIL and DIDAXIS_PASSWORD under Settings → Secrets and variables → Actions"
+            exit 1
+          fi
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
