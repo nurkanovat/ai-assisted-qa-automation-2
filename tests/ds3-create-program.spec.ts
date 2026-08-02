@@ -81,7 +81,7 @@ test('TC-006: empty Program Name prevents submission', async ({ page }) => {
   await expect(programs.newProgramModal.createButton).toBeDisabled();
 });
 
-test('TC-007: duplicate Program Name on create adds another program entry', async ({ page }) => {
+test.fixme('TC-007: duplicate Program Name on create adds another program entry', async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');

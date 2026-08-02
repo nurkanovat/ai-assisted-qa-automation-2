@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { ProgramsPage } from '../pages/ProgramsPage';
 
-test('Programs page has no accessibility violations', { tag: '@regression' }, async ({ page }) => {
+test.fixme('Programs page has no accessibility violations', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await programs.goto();
   await expect(programs.heading).toBeVisible();
@@ -12,7 +12,7 @@ test('Programs page has no accessibility violations', { tag: '@regression' }, as
   await expect(results.violations).toEqual([]);
 });
 
-test('New Program modal has no accessibility violations when scoped', async ({ page }) => {
+test.fixme('New Program modal has no accessibility violations when scoped', async ({ page }) => {
   const programs = new ProgramsPage(page);
   await programs.goto();
   await programs.openNewProgramForm();

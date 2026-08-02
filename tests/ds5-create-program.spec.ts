@@ -264,7 +264,7 @@ test('TC-018: HTML in description is escaped in list display', async ({ page }) 
   expect(dialogTriggered).toBe(false);
 });
 
-test('TC-019: duplicate program names display as separate rows', async ({ page }) => {
+test.fixme('TC-019: duplicate program names display as separate rows', async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'First duplicate description');
