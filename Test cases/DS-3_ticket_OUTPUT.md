@@ -1,8 +1,73 @@
 # DS-3 — Test Plan: Program Name Validation and Duplicate Prevention
 
-**Feature:** Program name validation and duplicate prevention  
-**Source:** DS-3_ticket_INPUT  
-**Scope:** **Program Name** validation on create (and related duplicate checks), program creation modal, Programs page, admin access
+**Jira:** [DS-3](https://legionqaschool.atlassian.net/browse/DS-3) — Program name validation and duplicate prevention  
+**Status:** To Do · **Priority:** Medium  
+**Sources:** DS-3 (Jira) + Confluence Program Setup docs (Field Definitions, Validation Rules, UI Behavior) + live app exploration (`https://test.didaxis.studio`)  
+**Scope:** **Program Name** validation on create (and related duplicate checks), New Program modal, Programs page, admin access
+
+---
+
+## Jira Acceptance Criteria
+
+**User story:** As an admin user, I want the system to prevent invalid or duplicate program names so that data integrity is maintained.
+
+```gherkin
+Scenario: Reject program name with only whitespace
+  Given I am on the program creation form
+  When I enter "   " as the program name
+  And I click Create
+  Then the form is not submitted (name is trimmed, treated as empty)
+
+Scenario: Accept program name with special characters
+  Given I am on the program creation form
+  When I enter "Informatique & IA - Niveau 2" as the program name
+  And I fill other required fields
+  And I click Create
+  Then the program is created successfully
+
+Scenario: Reject duplicate program name
+  Given a program "Web Development 2026" already exists
+  When I try to create a new program with the same name
+  Then I see an error indicating the name already exists
+```
+
+---
+
+## Confluence Evidence (Atlassian MCP)
+
+Pulled from the DS Confluence space:
+
+### Program Setup — Field Definitions
+- **Program Name:** required, max **100 characters**, unique per organization
+- **Description:** optional, max **500 characters**
+- Create button disabled when Program Name is empty; name trimmed on submit
+- Create/edit modals always show Program Name + Description; AI Generation Config is collapsible
+
+### Program Setup — Validation Rules
+- Client: empty name → Create/Save disabled; whitespace-only → trimmed, submission blocked, modal stays open
+- Server: duplicate name → 400/409 with error displayed; name >100 → 400; description >500 → 400
+
+### Program Setup — UI Behavior
+- Programs page (`/programs`): “Programs” title, “+ New Program”, table with name/description/edit/delete
+- After create/edit/delete the list must refresh in place (no manual reload)
+- On create failure: error displayed; modal remains for correction
+
+### Live app observations (`https://test.didaxis.studio`, 2026-08-09)
+- Login → Programs; “+ New Program” opens **New Program** dialog
+- Placeholders: Program Name `e.g. Computer Science BSc`, Description `Brief description`
+- **Create** disabled when name empty **and** when name is whitespace-only (`   `)
+- Special characters (`Informatique & IA - Niveau 2`) enable **Create**
+- Duplicate create: modal closes, second row appears — no effective duplicate rejection
+- Leading/trailing spaces appear retained on create (padded name visible in list)
+- Name of 120 characters is accepted (spec max is 100)
+
+### Spec vs app gaps (no defect keys)
+| Spec / AC requirement | Observed on test.didaxis.studio | Covered by |
+| --- | --- | --- |
+| Duplicate name rejected with user-visible error | Duplicate create succeeds; second row appears | TC-007, TC-008, TC-011, TC-013, TC-022 |
+| Name max 100 characters (server 400) | Names >100 accepted | TC-016, TC-017 |
+| Name trimmed on submit | Outer whitespace retained in list | TC-013, TC-014 |
+| Whitespace-only rejected | Matches spec — Create disabled | TC-005, TC-009, TC-010 |
 
 ---
 
@@ -22,9 +87,9 @@
 2. Enter `Introduction to statistics and machine learning` in **Description**
 3. Click **Create**
 
-**Expected result:** Modal closes; **Data Science 2026** appears in the program list
+**Expected result:** Modal closes; **Data Science 2026** appears in the program list without a page reload
 
-**Priority:** High
+**Priority:** High · **Source:** AC + UI Behavior
 
 ```gherkin
 Scenario: Valid program name is accepted
@@ -53,9 +118,9 @@ Scenario: Valid program name is accepted
 2. Enter `Programme de deuxième niveau en informatique et intelligence artificielle` in **Description**
 3. Click **Create**
 
-**Expected result:** Program **Informatique & IA - Niveau 2** is created successfully and appears in the program list
+**Expected result:** Program **Informatique & IA - Niveau 2** is created and appears in the program list
 
-**Priority:** High
+**Priority:** High · **Source:** AC
 
 ```gherkin
 Scenario: Accept program name with special characters
@@ -84,7 +149,7 @@ Scenario: Accept program name with special characters
 
 **Expected result:** Program **C++ & C# Programming (2026)** is created and displayed without encoding corruption
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** AC variation + Field Definitions (free-text name)
 
 ```gherkin
 Scenario: Programming special characters in program name are accepted
@@ -113,7 +178,7 @@ Scenario: Programming special characters in program name are accepted
 
 **Expected result:** Program **日本語プログラム 2026** is created and renders correctly in the list
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Field Definitions (string name)
 
 ```gherkin
 Scenario: Unicode program name is accepted
@@ -140,22 +205,18 @@ Scenario: Unicode program name is accepted
 **Steps:**
 1. Enter `   ` (three spaces) in **Program Name**
 2. Enter `Whitespace-only name validation test` in **Description**
-3. Click **Create**
+3. Observe **Create** / attempt submission
 
-**Expected result:**
-- Form is not submitted
-- No new program is added to the list
-- **Create** is disabled or validation feedback indicates Program Name is required
+**Expected result:** Form is not submitted; **Create** stays disabled (or modal stays open with no new list row) — observed: Create disabled for whitespace-only
 
-**Priority:** High
+**Priority:** High · **Source:** AC + Validation Rules + live app
 
 ```gherkin
 Scenario: Reject program name with only whitespace
   Given I am on the program creation form
   When I enter "   " as the program name
   And I fill in Description with "Whitespace-only name validation test"
-  And I click Create
-  Then the form is not submitted
+  Then the Create button is disabled
   And no new program is added to the program list
 ```
 
@@ -172,11 +233,11 @@ Scenario: Reject program name with only whitespace
 **Steps:**
 1. Leave **Program Name** empty
 2. Enter `Description without a program name` in **Description**
-3. Observe **Create** button and attempt submission
+3. Observe **Create** button
 
-**Expected result:** **Create** is disabled or submission blocked; no program created
+**Expected result:** **Create** is disabled; no program created
 
-**Priority:** High
+**Priority:** High · **Source:** Field Definitions + Validation Rules + live app
 
 ```gherkin
 Scenario: Empty program name prevents submission
@@ -203,12 +264,10 @@ Scenario: Empty program name prevents submission
 2. Enter `Duplicate attempt — second web dev cohort` in **Description**
 3. Click **Create**
 
-**Expected result:**
-- Error message indicates the name already exists
-- Modal remains open
-- No second **Web Development 2026** entry in the program list
+**Expected result:** Error indicates the name already exists; modal remains open; exactly one **Web Development 2026** in the list  
+**Live gap:** duplicate create succeeds and adds a second row
 
-**Priority:** High
+**Priority:** High · **Source:** AC + Validation Rules
 
 ```gherkin
 Scenario: Reject duplicate program name
@@ -218,7 +277,7 @@ Scenario: Reject duplicate program name
   And I fill in Description with "Duplicate attempt — second web dev cohort"
   And I click Create
   Then I see an error indicating the name already exists
-  And the program list does not contain a duplicate entry for "Web Development 2026"
+  And the program list contains exactly one entry named "Web Development 2026"
 ```
 
 ---
@@ -239,11 +298,9 @@ Scenario: Reject duplicate program name
 4. Change **Program Name** to `Web Development 2026 - Cohort B`
 5. Click **Create**
 
-**Expected result:**
-- After step 3: duplicate error shown; **Description** value retained
-- After step 5: **Web Development 2026 - Cohort B** created successfully
+**Expected result:** After step 3: duplicate error; Description retained; After step 5: **Web Development 2026 - Cohort B** created
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** UI Behavior (failure keeps modal) + AC
 
 ```gherkin
 Scenario: Duplicate error retains form data for correction
@@ -253,6 +310,7 @@ Scenario: Duplicate error retains form data for correction
   And I fill in Description with "Full-stack web development program — cohort B"
   And I click Create
   Then I see an error indicating the name already exists
+  And the Description field still shows "Full-stack web development program — cohort B"
   When I change the Program Name to "Web Development 2026 - Cohort B"
   And I click Create
   Then the program list shows "Web Development 2026 - Cohort B"
@@ -269,21 +327,20 @@ Scenario: Duplicate error retains form data for correction
 - Program creation form is open
 
 **Steps:**
-1. Enter `\t\t\t` (tab characters only) in **Program Name**
+1. Enter tab characters only in **Program Name**
 2. Enter `Tab-only name validation test` in **Description**
-3. Click **Create**
+3. Observe **Create**
 
-**Expected result:** Form not submitted; no program created; validation treats name as empty
+**Expected result:** Form not submitted; Create disabled or blocked; no program created
 
-**Priority:** High
+**Priority:** High · **Source:** Validation Rules (whitespace-only)
 
 ```gherkin
 Scenario: Tab-only program name is rejected
   Given I am on the program creation form
   When I enter only tab characters as the program name
   And I fill in Description with "Tab-only name validation test"
-  And I click Create
-  Then the form is not submitted
+  Then the Create button is disabled
   And no new program is added to the program list
 ```
 
@@ -300,27 +357,26 @@ Scenario: Tab-only program name is rejected
 **Steps:**
 1. Enter `  \t  \t  ` in **Program Name**
 2. Enter `Mixed whitespace validation test` in **Description**
-3. Click **Create**
+3. Observe **Create**
 
 **Expected result:** Form not submitted; no program created
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Validation Rules
 
 ```gherkin
 Scenario: Mixed whitespace-only program name is rejected
   Given I am on the program creation form
   When I enter "  \t  \t  " as the program name
   And I fill in Description with "Mixed whitespace validation test"
-  And I click Create
-  Then the form is not submitted
+  Then the Create button is disabled
   And no new program is added to the program list
 ```
 
 ---
 
-### TC-011 — Duplicate name does not partially persist on API failure recovery
+### TC-011 — Duplicate rejection leaves database unchanged after refresh
 
-**Title:** Failed duplicate create leaves database unchanged
+**Title:** Failed duplicate create leaves list with a single entry
 
 **Preconditions:**
 - User is logged in as admin
@@ -333,9 +389,9 @@ Scenario: Mixed whitespace-only program name is rejected
 3. Click **Create**
 4. Refresh the Programs page
 
-**Expected result:** Exactly one **Web Development 2026** in the list after refresh; no ghost or partial record
+**Expected result:** Exactly one **Web Development 2026** after refresh
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** AC + Validation Rules
 
 ```gherkin
 Scenario: Duplicate rejection does not leave partial records
@@ -353,9 +409,9 @@ Scenario: Duplicate rejection does not leave partial records
 
 ## Edge Cases
 
-### TC-012 — Duplicate check is case-sensitive or case-insensitive per spec
+### TC-012 — Duplicate check casing behavior
 
-**Title:** Casing variant of existing name follows defined duplicate rule
+**Title:** Lowercase variant of an existing name is treated as a duplicate (unique per org)
 
 **Preconditions:**
 - User is logged in as admin
@@ -367,22 +423,19 @@ Scenario: Duplicate rejection does not leave partial records
 2. Enter `Lowercase duplicate attempt` in **Description**
 3. Click **Create**
 
-**Expected result (document actual product behavior):
-- Rejected as duplicate (case-insensitive match), **or**
-- Accepted as distinct name (case-sensitive match)
-- Behavior is consistent and documented
+**Expected result:** Rejected as duplicate with error (case-insensitive uniqueness assumed for data integrity; confirm with BA if case-sensitive)
 
-**Priority:** High
+**Priority:** High · **Source:** Field Definitions (unique per organization) — casing ambiguous
 
 ```gherkin
-Scenario: Duplicate check casing behavior
+Scenario: Duplicate check rejects case-variant names
   Given a program "Web Development 2026" already exists
   And I am on the program creation form
   When I fill in Program Name with "web development 2026"
   And I fill in Description with "Lowercase duplicate attempt"
   And I click Create
   Then I see an error indicating the name already exists
-  Or the program list shows "web development 2026" if names are case-sensitive
+  And the program list contains exactly one entry matching "Web Development 2026" ignoring case
 ```
 
 ---
@@ -401,11 +454,10 @@ Scenario: Duplicate check casing behavior
 2. Enter `Padded duplicate name attempt` in **Description**
 3. Click **Create**
 
-**Expected result:**
-- After trim, name matches existing **Web Development 2026**
-- Duplicate error shown; no second program created
+**Expected result:** After trim, duplicate error; exactly one **Web Development 2026**  
+**Live gap:** padded name can create another entry
 
-**Priority:** High
+**Priority:** High · **Source:** AC + Field Definitions (trim on submit)
 
 ```gherkin
 Scenario: Duplicate detected after trimming padded program name
@@ -434,9 +486,10 @@ Scenario: Duplicate detected after trimming padded program name
 2. Enter `Network security and ethical hacking basics` in **Description**
 3. Click **Create**
 
-**Expected result:** Program saved as **Cybersecurity Fundamentals** (trimmed); appears once in list
+**Expected result:** Program saved as **Cybersecurity Fundamentals** (trimmed)  
+**Live gap:** outer whitespace retained in list
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Field Definitions (trimmed on submit)
 
 ```gherkin
 Scenario: Valid padded program name is trimmed on create
@@ -452,7 +505,7 @@ Scenario: Valid padded program name is trimmed on create
 
 ### TC-015 — Single-character Program Name boundary
 
-**Title:** Minimum-length Program Name is accepted or clearly rejected
+**Title:** Minimum-length Program Name is accepted
 
 **Preconditions:**
 - User is logged in as admin
@@ -463,72 +516,71 @@ Scenario: Valid padded program name is trimmed on create
 2. Enter `Single character name boundary test` in **Description**
 3. Click **Create**
 
-**Expected result:** Program **A** created, or validation error if minimum length > 1
+**Expected result:** Program **A** created (no min length in Field Definitions beyond non-empty)
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Field Definitions
 
 ```gherkin
-Scenario: Single character program name boundary
+Scenario: Single character program name is accepted
   Given I am on the program creation form
   When I fill in Program Name with "A"
   And I fill in Description with "Single character name boundary test"
   And I click Create
   Then the program list shows "A"
-  Or I see a validation message if minimum length is greater than one character
 ```
 
 ---
 
 ### TC-016 — Program Name at maximum allowed length
 
-**Title:** Max-length Program Name is accepted
+**Title:** 100-character Program Name is accepted
 
 **Preconditions:**
 - User is logged in as admin
 - Program creation form is open
 
 **Steps:**
-1. Enter `Advanced Web Development and Cloud Architecture Specialization Program Track 2026 Edition Alpha` (100 characters) in **Program Name**
+1. Enter a unique name of exactly **100** characters in **Program Name**
 2. Enter `Max length name validation test` in **Description**
 3. Click **Create**
 
-**Expected result:** Program created with full name in list, or clear max-length validation if limit is lower
+**Expected result:** Program created; full name shown in list
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Field Definitions (max 100)
 
 ```gherkin
 Scenario: Program name at maximum allowed length
   Given I am on the program creation form
-  When I fill in Program Name with "Advanced Web Development and Cloud Architecture Specialization Program Track 2026 Edition Alpha"
+  When I fill in Program Name with a unique 100-character name
   And I fill in Description with "Max length name validation test"
   And I click Create
-  Then the program list shows the full program name
-  Or I see a validation message if the name exceeds the maximum length
+  Then the program list shows the full 100-character program name
 ```
 
 ---
 
 ### TC-017 — Program Name exceeding maximum length is rejected
 
-**Title:** Over-limit Program Name is blocked before create
+**Title:** Name over 100 characters is blocked
 
 **Preconditions:**
 - User is logged in as admin
 - Program creation form is open
 
 **Steps:**
-1. Enter a 256-character string in **Program Name**
+1. Enter a **101+** character string in **Program Name** (probe with 120)
 2. Enter `Over max length validation test` in **Description**
 3. Click **Create**
 
-**Expected result:** Validation error or **Create** disabled; no program created
+**Expected result:** Validation/server error; no program created  
+**Live gap:** 120-character name is accepted
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Validation Rules (name >100 → 400)
 
 ```gherkin
 Scenario: Program name exceeding maximum length is rejected
   Given I am on the program creation form
-  When I fill in Program Name with a string of 256 characters
+  When I fill in Program Name with a string of 120 characters
   And I fill in Description with "Over max length validation test"
   And I click Create
   Then I see a validation message for Program Name
@@ -550,9 +602,9 @@ Scenario: Program name exceeding maximum length is rejected
 1. Change **Program Name** to `Web Development 2026`
 2. Click **Save**
 
-**Expected result:** Error indicating name already exists; **Data Science 2026** unchanged in list
+**Expected result:** Error indicating name already exists; **Data Science 2026** unchanged
 
-**Priority:** High
+**Priority:** High · **Source:** Field Definitions (unique) — edit implied by feature title
 
 ```gherkin
 Scenario: Duplicate program name rejected on edit
@@ -580,9 +632,9 @@ Scenario: Duplicate program name rejected on edit
 2. Change **Description** to `Updated description only`
 3. Click **Save**
 
-**Expected result:** Save succeeds; no false duplicate error against the same record
+**Expected result:** Save succeeds; no false duplicate error
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Uniqueness semantics
 
 ```gherkin
 Scenario: Edit with same program name does not trigger duplicate error
@@ -597,9 +649,9 @@ Scenario: Edit with same program name does not trigger duplicate error
 
 ---
 
-### TC-020 — Emoji in Program Name is handled consistently
+### TC-020 — Emoji in Program Name is accepted
 
-**Title:** Emoji in name passes or fails validation with clear feedback
+**Title:** Emoji in name is stored and displayed
 
 **Preconditions:**
 - User is logged in as admin
@@ -610,18 +662,17 @@ Scenario: Edit with same program name does not trigger duplicate error
 2. Enter `Cloud platforms and DevOps` in **Description**
 3. Click **Create**
 
-**Expected result:** Program created with emoji preserved, or validation error if emoji disallowed
+**Expected result:** Program created with emoji preserved (free-text string field)
 
-**Priority:** Low
+**Priority:** Low · **Source:** Field Definitions
 
 ```gherkin
-Scenario: Emoji in program name validation
+Scenario: Emoji in program name is accepted
   Given I am on the program creation form
   When I fill in Program Name with "Cloud Computing 2026 🎓"
   And I fill in Description with "Cloud platforms and DevOps"
   And I click Create
   Then the program list shows "Cloud Computing 2026 🎓"
-  Or I see a validation message if emoji are not allowed in program names
 ```
 
 ---
@@ -640,11 +691,9 @@ Scenario: Emoji in program name validation
 3. Click **Create** (if allowed)
 4. View the program in the list
 
-**Expected result:**
-- No script execution in browser
-- Name stored/displayed escaped or rejected with validation message
+**Expected result:** No script execution; name shown escaped or rejected
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** Standard security practice
 
 ```gherkin
 Scenario: HTML in program name is sanitized or rejected
@@ -653,15 +702,15 @@ Scenario: HTML in program name is sanitized or rejected
   And I fill in Description with "Security validation test"
   And I click Create
   Then no script is executed in the browser
-  And I see a validation message
-  Or the program list shows the name as escaped text
+  And the program list shows the name as escaped text
+  Or I see a validation message rejecting the name
 ```
 
 ---
 
 ### TC-022 — Double-click Create does not bypass duplicate check
 
-**Title:** Rapid duplicate submissions create at most one rejected attempt
+**Title:** Rapid duplicate submissions do not create extra records
 
 **Preconditions:**
 - User is logged in as admin
@@ -673,11 +722,9 @@ Scenario: HTML in program name is sanitized or rejected
 2. Enter `Double-click duplicate test` in **Description**
 3. Double-click **Create** quickly
 
-**Expected result:**
-- Duplicate error shown
-- Exactly one **Web Development 2026** remains in the program list
+**Expected result:** Duplicate error; exactly one **Web Development 2026** remains
 
-**Priority:** Medium
+**Priority:** Medium · **Source:** AC + UI Behavior
 
 ```gherkin
 Scenario: Double submit on duplicate name does not create extra records
@@ -695,41 +742,23 @@ Scenario: Double submit on duplicate name does not create extra records
 ## Coverage Matrix
 
 | Acceptance criterion | Test cases |
-|----------------------|------------|
+| --- | --- |
 | Whitespace-only name trimmed and rejected | TC-005, TC-009, TC-010 |
-| Special characters in name accepted | TC-002, TC-003, TC-004 |
+| Special characters in name accepted | TC-002, TC-003, TC-004, TC-020 |
 | Duplicate name on create rejected with error | TC-007, TC-008, TC-011, TC-013, TC-022 |
+| Confluence: empty name disables Create | TC-006 |
+| Confluence: max 100 / over-max rejected | TC-016, TC-017 |
+| Confluence: trim on submit | TC-013, TC-014 |
+| Uniqueness on edit (implied) | TC-018, TC-019 |
 
 ---
 
-## Ambiguities and Gaps in the Acceptance Criteria
+## Ambiguities and Gaps
 
-1. **Create vs edit scope** — ACs cover create only; duplicate prevention on edit is implied by the feature title but not specified (TC-018, TC-019).
-
-2. **Whitespace trim timing** — AC states name is trimmed and treated as empty but does not say whether trim happens on blur, on submit, or continuously (TC-005, TC-014).
-
-3. **Error presentation** — AC requires an error for duplicates but does not specify inline field error, toast, or modal banner (TC-007).
-
-4. **Exact duplicate error message** — Wording ("name already exists" vs "Program Name must be unique") is not defined.
-
-5. **Case sensitivity** — No rule for `Web Development 2026` vs `web development 2026` (TC-012).
-
-6. **Leading/trailing spaces on valid names** — AC covers whitespace-only; behavior for padded but otherwise valid names is unspecified (TC-013, TC-014).
-
-7. **Character allowlist** — AC shows `&` and `-` as allowed; full set of permitted special characters is not listed (TC-003, TC-020, TC-021).
-
-8. **Max/min length** — No length constraints in AC (TC-015, TC-016, TC-017).
-
-9. **Description required?** — AC says "fill other required fields" but does not name **Description** or empty-Description behavior.
-
-10. **Create button state** — Unclear whether **Create** is disabled for whitespace-only names or only blocked on click (TC-005 vs TC-006).
-
-11. **Unicode normalization** — Visually similar characters (e.g. full-width vs half-width) and NFC/NFD duplicates are not addressed.
-
-12. **Concurrent duplicate creation** — Two admins creating the same name simultaneously is not covered.
-
-13. **Login / role** — Admin role assumed from related tickets; non-admin validation bypass is not in AC.
-
-14. **Persistence after duplicate error** — Whether form values are retained after duplicate rejection is unspecified (TC-008).
-
-15. **Trim characters** — Only spaces shown in AC example; tabs, newlines, and non-breaking spaces are not explicitly listed (TC-009, TC-010).
+1. **Create vs edit scope** — ACs cover create only; duplicate on edit implied by uniqueness (TC-018, TC-019).
+2. **Error presentation** — AC requires an error for duplicates but does not specify toast vs inline vs modal banner (TC-007). Exact copy unknown.
+3. **Case sensitivity** — Spec says unique per org but not whether casing differs (TC-012).
+4. **Description required?** — AC says “fill other required fields”; Confluence marks Description optional.
+5. **Unicode normalization** — Visually similar / NFC vs NFD duplicates not specified.
+6. **Concurrent duplicate creation** — Two admins creating the same name simultaneously not covered.
+7. **Live gaps** — Duplicate prevention, max-100 enforcement, and trim-on-submit do not match Confluence as of live exploration; tests should assert the AC/spec and fail until the product matches.
