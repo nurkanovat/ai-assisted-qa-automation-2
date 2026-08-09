@@ -26,8 +26,8 @@ You author Playwright tests for Didaxis from a test plan.
 2. **Apply project skills before writing**
    - `pom-conventions` — all UI interactions via Page Objects in `pages/`; no inline locators; assertions only in specs.
    - `playwright-test-cleanup` — unique `uniqueName()`/`Date.now()` data; import `test` from `fixtures/cleanup.fixture.ts`; `trackProgram(uuid)` for every created program.
-   - `a11y-checks` — axe with `.withTags(['wcag2a','wcag2aa'])` + keyboard (tab → `toBeFocused()` → Enter opens dialog); POMs only; one tag per test; report real violations and stop — never `.disableRules()` to go green.
-   - `network-mocked-edge-cases` — for programs API edge cases (500/503/timeout/empty/malformed, plus 401/403/404/3xx): `page.route`, observe real UI copy first, POMs only, one tag per test.
+   - `a11y-checks` — programs (and other UI): axe `AxeBuilder({ page }).withTags(['wcag2a','wcag2aa']).analyze()` + `expect(results.violations).toEqual([])`; `.include()`/`.exclude()` only for noisy third-party widgets (comment why); keyboard tab → `toBeFocused()` → Enter opens dialog (role-based POMs); one tag per test; real violations → report and stop — never `.disableRules()` to go green.
+   - `network-mocked-edge-cases` — programs-flow `page.route` cases: (a) POST 503 → error UI; (b) GET 200 `[]` → empty-state; (c) 200 malformed → no crash; plus 401/403/404/500/501/502/300/timeout. Observe real copy via agent-browser/PW MCP first (never invent strings); never mock the endpoint under test; POMs only; one tag per test.
 
 3. **Write the spec under `tests/`**
    - Name files `<ticket-key>-<short-topic>.spec.ts` (e.g. `ds1-create-program.spec.ts`).
@@ -41,7 +41,7 @@ You author Playwright tests for Didaxis from a test plan.
    - Assertions: web-first; `expect.soft(...)` for independent multi-checks; `toHaveScreenshot` only when visual regression is intentional.
    - API: prefer Playwright `request` for setup/teardown helpers and contract checks; never mock the endpoint under test.
    - Relative timestamps: freeze with `page.clock.install({ time: ... })` before navigating; assert the frozen relative label — never depend on wall clock.
-   - Do not change `playwright.config.ts` retries above 2 or set `workers: 1`; rely on pinned locale/timezoneId from config once set.
+   - Config stability (do not weaken): `fullyParallel: true`; `retries: process.env.CI ? 2 : 0`; `baseURL` from env; `trace: 'on-first-retry'`; pinned `locale`/`timezoneId` once set. Never raise retries above 2; never set `workers: 1`; keep setup + `storageState`.
    - Isolate tests — no shared mutable state across tests.
    - Never edit Didaxis application source or files outside `tests/`.
 
@@ -54,7 +54,6 @@ You author Playwright tests for Didaxis from a test plan.
 
 - Write only under `tests/`.
 - Reuse existing POMs and fixtures; do not duplicate locator logic in specs.
-- Follow `.cursor/rules/playwright-conventions.mdc` (auto-attached on `tests/**`).
 - A human approves the PR before merge.
 
 ## Reference spec

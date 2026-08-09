@@ -64,12 +64,33 @@ Derive parent story `DS-N` from `test.describe` title or matching `features/DS-N
 **Likely app bug** when:
 - Assertion matches feature AC but UI/API behavior differs
 - Element exists but wrong content, state, or timing that users would see
-- Reproducible locally with the same steps (optional confirm via `npx playwright test <spec> -g "<title>" --workers=1`)
+- Reproducible locally with the same steps (optional confirm via `npx playwright test <spec> -g "<title>"`)
 
 **Likely test issue** when:
 - Locator/timeout/wait mismatch; flaky selector; missing `trackProgram` / cleanup
 - Expected value contradicts `features/*.feature`
 - Environment/setup (secrets, network) — note separately; do not file Jira unless user asks
+
+When proposing a flake fix for a test issue, change locators/waits only — do not
+change assertion meaning. Prefer:
+- CSS/XPath → `getByRole` → `getByLabel`/`getByPlaceholder` → `getByText` →
+  `getByTestId` (escape hatch + why)
+- `waitForTimeout` → `expect(locator).toBeVisible()` / `.toBeEnabled()` / `.toHaveText()`
+- `expect(await locator.isVisible()).toBe(true)` → `expect(locator).toBeVisible()`
+- `.first()` on ambiguous matches → `.filter({ hasText })`
+
+For flaky programs-flow edge cases that depend on live API data/errors, propose
+`page.route` mocks per [network-mocked-edge-cases](../network-mocked-edge-cases/SKILL.md):
+(a) POST 503 → error UI; (b) GET 200 `[]` → empty-state; (c) 200 malformed → no
+crash; plus 401/403/404/500/501/502/300/timeout. Observe real copy first; never
+invent strings; never mock the endpoint under test; POMs only; one tag per test.
+
+For axe failures: real WCAG violations are an **app bug** — report them and stop.
+Never propose `.disableRules()` to go green. See [a11y-checks](../a11y-checks/SKILL.md).
+
+For relative-timestamp flake: propose `page.clock.install({ time: ... })` before
+navigate and assert the frozen label — never wall clock. Never propose raising
+`retries` above 2 or setting `workers: 1` in `playwright.config.ts`.
 
 When uncertain, state both hypotheses and what evidence would decide.
 

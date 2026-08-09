@@ -16,11 +16,18 @@ intent; POMs handle mechanics.
 1. One Page Object class per page or distinct component.
    Examples: `LoginPage`, `ProgramsPage`, `NewProgramModal`.
 
-2. Define locators as `readonly` properties in the constructor,
-   using `getByRole`, `getByLabel`, or `getByText` — never CSS selectors.
+2. Define locators as `readonly` properties in the constructor, in priority
+   order: `getByRole` → `getByLabel` / `getByPlaceholder` → `getByText` →
+   `getByTestId` (escape hatch only — comment why). Never CSS, XPath, or
+   brittle text. When a locator matches more than one element, disambiguate
+   with `.filter({ hasText })`, not `.first()`.
 
 3. Provide methods for user actions: `goto`, `clickX`, `fillY`, `submit`.
-   Methods perform actions; they do not assert.
+   Methods perform actions; they do not assert. Never `waitForTimeout` in
+   POMs — callers use web-first `expect(locator).toBeVisible()` /
+   `.toBeEnabled()` / `.toHaveText()`. Never gate on
+   `expect(await locator.isVisible()).toBe(true)`; use
+   `expect(locator).toBeVisible()`.
 
 4. **No assertions inside Page Objects.** All `expect(...)` calls
    live in the test files, never in `pages/`.

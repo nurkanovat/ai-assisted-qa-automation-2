@@ -5,93 +5,77 @@ description: Adds @axe-core/playwright accessibility scans when generating or re
 
 # Accessibility Checks
 
-Every Playwright test for a new page or component **must** include an axe-core scan. This is not optional and does not require the user to ask for it. If you are generating or reviewing a UI test, add or verify an a11y check before considering the work complete.
+Every Playwright test for a new page or component **must** include accessibility coverage. This is not optional. For the programs page, cover both an axe scan and a keyboard path axe cannot exercise.
 
 ## When to apply
 
-Apply this skill when you:
-
 - Generate a new Playwright spec or test case for a page or component
 - Extend an existing test to cover a new page, modal, drawer, or widget
-- Review or refactor any UI test — even functional or E2E tests with no a11y mention
+- Review or refactor any UI test — even if a11y is not mentioned
 
-If the test navigates to or interacts with UI, it needs an axe scan.
+If the test navigates to or interacts with UI, it needs a11y coverage.
 
-## Required pattern
+## Required: axe scan (programs page and other UI)
 
 1. Import `AxeBuilder` from `@axe-core/playwright`.
-2. Navigate to the target UI and wait for it to be ready (use POM methods + web-first `expect` visibility checks first).
-3. Run the scan:
+2. Navigate via existing POMs; wait with web-first `expect` visibility checks. No inline locators in the spec.
+3. Run the scan with WCAG 2 A/AA tags:
 
 ```typescript
 import AxeBuilder from "@axe-core/playwright";
-import { test, expect } from "@playwright/test";
 
-const results = await new AxeBuilder({ page }).analyze();
-
-await expect(results.violations).toEqual([]);
-```
-
-4. Use web-first `expect` on `results.violations` — never use bare `assert`, `if (violations.length)`, or manual length checks.
-
-## Scoping
-
-| Target | Scope |
-|--------|-------|
-| Full page | No `.include()` — scan the whole page |
-| Modal, drawer, panel, or component | Chain `.include(selector)` to limit the scan |
-
-For component-level scans, derive the include selector from a role-based POM locator (see `NewProgramModal.axeIncludeSelector()`). Do not use brittle CSS selectors unrelated to the component under test.
-
-```typescript
 const results = await new AxeBuilder({ page })
-  .include(await modal.axeIncludeSelector())
+  .withTags(["wcag2a", "wcag2aa"])
   .analyze();
 
 await expect(results.violations).toEqual([]);
 ```
 
-## disableRules — strict policy
+4. Assert with web-first `expect(results.violations).toEqual([])` — never bare `assert`, `if (violations.length)`, or manual length checks.
+5. **One tag per test** (e.g. `{ tag: "@a11y" }`) — never multiple tags.
 
-`.disableRules()` is allowed **only** when a rule produces a known false positive that cannot be fixed in the test or app right now.
+### Scoping `.include()` / `.exclude()`
 
-Rules:
+Use `.include()` / `.exclude()` **only** when a third-party widget is noisy — and add a comment explaining why. Do not scope away real app chrome to hide violations.
 
-- **Always** add an inline comment on the same line or the line above explaining **why** the rule is disabled and what tracks fixing it (ticket, upstream issue, or environmental limitation).
-- **Never** use `.disableRules()` to silence a real accessibility failure.
-- **Never** disable rules preemptively "just in case."
-- Prefer fixing the violation or scoping with `.include()` before disabling anything.
+### Real violations — stop
 
-```typescript
-// color-contrast: modal overlay uses design-system tokens with insufficient contrast — tracked in PROJ-1234
-.disableRules(["color-contrast"])
-```
+If the scan finds **real** WCAG violations, **report them and stop**. Never use `.disableRules()` to go green.
 
-If you cannot justify the disable with a specific reason, do not disable the rule.
+## Required: keyboard test (axe cannot do this)
+
+On the programs page (and any primary CTA that opens a dialog):
+
+1. Tab to the primary control (role-based POM locator).
+2. Assert `expect(locator).toBeFocused()`.
+3. Press Enter.
+4. Assert the dialog opens (role-based POM locator, e.g. dialog visible).
+
+Drive every step through existing POMs — no inline locators. One tag per test.
 
 ## File placement
 
 - Dedicated a11y coverage: `tests/<feature>.a11y.spec.ts` (see `tests/programs.a11y.spec.ts`)
-- Or add an axe assertion at the end of an existing functional test when it already reaches the target UI state
+- Or add axe / keyboard coverage when a functional test already reaches the target UI
 
-Keep axe scans in test files, not in Page Objects. POMs may expose helpers like `axeIncludeSelector()`; assertions stay in specs.
+Keep axe assertions in test files, not in Page Objects. POMs may expose helpers like `axeIncludeSelector()` only when a documented third-party noise case needs scoping.
 
 ## Generating tests checklist
 
-- [ ] Target UI is loaded and visible before scanning
-- [ ] `AxeBuilder({ page }).analyze()` is called
-- [ ] Component-level scans use `.include()`
-- [ ] `await expect(results.violations).toEqual([])` asserts zero violations
-- [ ] Any `.disableRules()` has a commented reason — none added without justification
+- [ ] Target UI loaded via POM and visible before scanning
+- [ ] `AxeBuilder({ page }).withTags(['wcag2a','wcag2aa']).analyze()`
+- [ ] `await expect(results.violations).toEqual([])`
+- [ ] `.include()` / `.exclude()` only for noisy third-party widgets, with a why-comment
+- [ ] No `.disableRules()` — real violations reported and work stopped
+- [ ] Keyboard: tab → `toBeFocused()` → Enter → dialog opens (role-based POMs)
+- [ ] One tag per test; no inline locators
 
 ## Reviewing tests checklist
 
-When reviewing any UI test, verify:
-
-- [ ] An axe scan covers every new page or component introduced by the change
-- [ ] Scans run after the UI is in the state under test (modal open, form filled, etc.)
-- [ ] Violations are asserted with web-first `expect`, not manual checks
-- [ ] No `.disableRules()` without a documented reason
+- [ ] Axe + keyboard cover new pages/components (especially programs)
+- [ ] Scans use `wcag2a` / `wcag2aa` tags
+- [ ] Violations asserted with web-first `expect`
+- [ ] No `.disableRules()` to silence real failures
 - [ ] No missing a11y coverage because the user didn't say "accessibility"
 
 If any item fails, add or fix the a11y check before considering the test complete.
