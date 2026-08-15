@@ -6,6 +6,11 @@
         "command": "node .cursor/hooks/generation-gate.js",
         "matcher": "tests/.*|Write|TabWrite",
         "failClosed": true
+      },
+      {
+        "command": ".cursor/hooks/assertion-guard.js",
+        "matcher": "tests/",
+        "failClosed": true
       }
     ]
   }
