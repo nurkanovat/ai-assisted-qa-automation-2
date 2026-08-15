@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
   await loginAsAdmin(page);
 });
 
-test('TC-001: delete icon opens native confirmation dialog', async ({ page }) => {
+test('TC-001: delete icon opens native confirmation dialog', { tag: '@smoke' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Test Program');
   await seedProgram(page, programName, 'Delete confirmation test');
@@ -33,7 +33,7 @@ test('TC-001: delete icon opens native confirmation dialog', async ({ page }) =>
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-002: confirmed deletion removes program from the list', async ({ page }) => {
+test('TC-002: confirmed deletion removes program from the list', { tag: '@smoke' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Test Program');
   await seedProgram(page, programName, 'Delete confirm test');
@@ -42,7 +42,7 @@ test('TC-002: confirmed deletion removes program from the list', async ({ page }
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-003: cancelled deletion keeps program in the list', async ({ page }) => {
+test('TC-003: cancelled deletion keeps program in the list', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -52,7 +52,7 @@ test('TC-003: cancelled deletion keeps program in the list', async ({ page }) =>
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-004: program list updates in place after confirmed deletion', async ({ page }) => {
+test('TC-004: program list updates in place after confirmed deletion', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const deleteName = uniqueName('Data Science 2026');
   const keepName = uniqueName('Cybersecurity Fundamentals');
@@ -65,7 +65,7 @@ test('TC-004: program list updates in place after confirmed deletion', async ({ 
   await expect(programs.programRow(keepName)).toBeVisible();
 });
 
-test('TC-005: deleted program stays removed after page refresh', async ({ page }) => {
+test('TC-005: deleted program stays removed after page refresh', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Test Program');
   await seedProgram(page, programName, 'Refresh persistence test');
@@ -76,7 +76,7 @@ test('TC-005: deleted program stays removed after page refresh', async ({ page }
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-006: closing confirmation without confirming leaves program intact', async ({ page }) => {
+test('TC-006: closing confirmation without confirming leaves program intact', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Mobile App Development 2026');
   await seedProgram(page, programName, 'iOS and Android development');
@@ -86,7 +86,7 @@ test('TC-006: closing confirmation without confirming leaves program intact', as
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-007: non-admin users cannot delete programs', async ({ page }) => {
+test('TC-007: non-admin users cannot delete programs', { tag: '@sanity' }, async ({ page }) => {
   test.skip(
     !nonAdminEmail || !nonAdminPassword,
     'DIDAXIS_NONADMIN_EMAIL and DIDAXIS_NONADMIN_PASSWORD must be set in .env',
@@ -105,7 +105,7 @@ test('TC-007: non-admin users cannot delete programs', async ({ page }) => {
   }
 });
 
-test('TC-008: failed delete keeps program visible in the list', async ({ page }) => {
+test('TC-008: failed delete keeps program visible in the list', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('API Failure Delete Test');
   await seedProgram(page, programName, 'Testing delete error handling');
@@ -127,7 +127,7 @@ test('TC-008: failed delete keeps program visible in the list', async ({ page })
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-009: cancelled deletion persists on refresh', async ({ page }) => {
+test('TC-009: cancelled deletion persists on refresh', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Cloud Computing 2026');
   await seedProgram(page, programName, 'AWS and Azure fundamentals');
@@ -138,7 +138,7 @@ test('TC-009: cancelled deletion persists on refresh', async ({ page }) => {
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-010: delete removes only the selected program', async ({ page }) => {
+test('TC-010: delete removes only the selected program', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const deleteName = uniqueName('Test Program');
   const keepOne = uniqueName('UX Design Bootcamp');
@@ -153,7 +153,7 @@ test('TC-010: delete removes only the selected program', async ({ page }) => {
   await expect(programs.programRow(keepTwo)).toBeVisible();
 });
 
-test('TC-011: delete program with special characters in name', async ({ page }) => {
+test('TC-011: delete program with special characters in name', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('C++ & C# Programming (2026)');
   let dialogMessage = '';
@@ -168,7 +168,7 @@ test('TC-011: delete program with special characters in name', async ({ page }) 
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-012: delete program with Unicode name', async ({ page }) => {
+test('TC-012: delete program with Unicode name', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('日本語プログラム 2026');
   await seedProgram(page, programName, 'Multilingual curriculum 🎓');
@@ -177,7 +177,7 @@ test('TC-012: delete program with Unicode name', async ({ page }) => {
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-013: delete program with maximum-length name', async ({ page }) => {
+test('TC-013: delete program with maximum-length name', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName(
     'Advanced Web Development and Cloud Architecture Specialization Program Track 2026 Edition Alpha',
@@ -188,7 +188,7 @@ test('TC-013: delete program with maximum-length name', async ({ page }) => {
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-014: delete last created program row succeeds', async ({ page }) => {
+test('TC-014: delete last created program row succeeds', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Test Program');
   await seedProgram(page, programName, 'Only program in this test scope');
@@ -197,7 +197,7 @@ test('TC-014: delete last created program row succeeds', async ({ page }) => {
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-015: double confirm click removes program once', async ({ page }) => {
+test('TC-015: double confirm click removes program once', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Test Program');
   await seedProgram(page, programName, 'Double confirm test');
@@ -213,7 +213,7 @@ test('TC-015: double confirm click removes program once', async ({ page }) => {
   expect(dialogCount).toBeGreaterThanOrEqual(1);
 });
 
-test('TC-016: delete while edit form is open requires closing edit modal first', async ({ page }) => {
+test('TC-016: delete while edit form is open requires closing edit modal first', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -227,7 +227,7 @@ test('TC-016: delete while edit form is open requires closing edit modal first',
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-017: confirm delete on already-deleted program shows error', async ({ page }) => {
+test('TC-017: confirm delete on already-deleted program shows error', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Test Program');
   await seedProgram(page, programName, 'Concurrent delete test');
@@ -249,7 +249,7 @@ test('TC-017: confirm delete on already-deleted program shows error', async ({ p
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-018: delete targets correct program among similar names', async ({ page }) => {
+test('TC-018: delete targets correct program among similar names', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const baseName = uniqueName('Web Development 2026');
   const updatedName = `${baseName} - Updated`;
@@ -268,7 +268,7 @@ test('TC-018: delete targets correct program among similar names', async ({ page
   await expect(programs.programRow(updatedName)).toBeVisible();
 });
 
-test('TC-019: Escape key cancels program deletion', async ({ page }) => {
+test('TC-019: Escape key cancels program deletion', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Informatique & IA - Niveau 2');
   await seedProgram(page, programName, 'French program');
@@ -278,7 +278,7 @@ test('TC-019: Escape key cancels program deletion', async ({ page }) => {
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-020: deleted program name can be reused for new program', async ({ page }) => {
+test('TC-020: deleted program name can be reused for new program', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Test Program');
   await seedProgram(page, programName, 'Original program');

@@ -12,8 +12,10 @@ export const PROGRAMS_URL = `${BASE_URL}/programs`;
 
 export const adminEmail = process.env.DIDAXIS_EMAIL;
 export const adminPassword = process.env.DIDAXIS_PASSWORD;
-export const nonAdminEmail = process.env.DIDAXIS_NONADMIN_EMAIL;
-export const nonAdminPassword = process.env.DIDAXIS_NONADMIN_PASSWORD;
+export const nonAdminEmail =
+  process.env.DIDAXIS_NONADMIN_EMAIL ?? process.env.DIDAXIS_ALT_EMAIL;
+export const nonAdminPassword =
+  process.env.DIDAXIS_NONADMIN_PASSWORD ?? process.env.DIDAXIS_ALT_PASSWORD;
 
 export function uniqueName(base: string): string {
   return `${base}-${Date.now()}`;

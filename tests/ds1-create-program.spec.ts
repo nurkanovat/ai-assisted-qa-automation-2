@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures/cleanup.fixture';
+import { buildProgram } from '../test-data/factories/program.factory';
 import {
   adminEmail,
   adminPassword,
@@ -19,7 +20,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 // TC-001 — Program creation form displays required fields
-test('TC-001: admin sees Program Name and Description on the creation form', async ({ page }) => {
+test('TC-001: admin sees Program Name and Description on the creation form', { tag: '@smoke' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await programs.goto();
   await programs.openNewProgramForm();
@@ -36,10 +37,9 @@ test('TC-001: admin sees Program Name and Description on the creation form', asy
 });
 
 // TC-002 — Program is created and appears in the list
-test('TC-002: valid program is saved and shown in the program list', async ({ page, trackProgram }) => {
+test('TC-002: valid program is saved and shown in the program list', { tag: '@smoke' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
-  const programName = uniqueName('Web Development 2026');
-  const description = 'Full-stack web development program';
+  const { name: programName, description } = buildProgram();
 
   await programs.goto();
   trackProgram(await createProgramReturningId(page, programName, description));
@@ -49,7 +49,7 @@ test('TC-002: valid program is saved and shown in the program list', async ({ pa
 });
 
 // TC-003 — Program can be created with description only populated alongside valid name
-test('TC-003: program is created when both fields contain valid text', async ({ page, trackProgram }) => {
+test('TC-003: program is created when both fields contain valid text', { tag: '@sanity' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Data Science 2026');
   const description = 'Introduction to statistics and machine learning';
@@ -62,7 +62,7 @@ test('TC-003: program is created when both fields contain valid text', async ({ 
 });
 
 // TC-004 — New program appears without full page reload
-test('TC-004: program list updates immediately after successful creation', async ({ page, trackProgram }) => {
+test('TC-004: program list updates immediately after successful creation', { tag: '@sanity' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Cybersecurity Fundamentals');
   const description = 'Network security and ethical hacking basics';
@@ -76,7 +76,7 @@ test('TC-004: program list updates immediately after successful creation', async
 });
 
 // TC-005 — Create is disabled when Program Name is empty
-test('TC-005: empty Program Name prevents submission', async ({ page }) => {
+test('TC-005: empty Program Name prevents submission', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await programs.goto();
   await programs.openNewProgramForm();
@@ -87,7 +87,7 @@ test('TC-005: empty Program Name prevents submission', async ({ page }) => {
 });
 
 // TC-006 — Program is not created when Create cannot be clicked
-test('TC-006: empty name does not create a program via UI', async ({ page }) => {
+test('TC-006: empty name does not create a program via UI', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const orphanDescription = uniqueName('Orphan description without a program name');
 
@@ -102,7 +102,7 @@ test('TC-006: empty name does not create a program via UI', async ({ page }) => 
 });
 
 // TC-007 — Non-admin cannot open or use program creation
-test('TC-007: non-admin users cannot create programs', async ({ page }) => {
+test('TC-007: non-admin users cannot create programs', { tag: '@sanity' }, async ({ page }) => {
   test.skip(
     !nonAdminEmail || !nonAdminPassword,
     'DIDAXIS_NONADMIN_EMAIL and DIDAXIS_NONADMIN_PASSWORD must be set in .env',
@@ -121,7 +121,7 @@ test('TC-007: non-admin users cannot create programs', async ({ page }) => {
 });
 
 // TC-008 — Closing modal without saving does not create a program
-test('TC-008: cancel/close discards unsaved program data', async ({ page }) => {
+test('TC-008: cancel/close discards unsaved program data', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Unsaved Program Draft');
   const description = 'This should not be persisted';
@@ -136,7 +136,7 @@ test('TC-008: cancel/close discards unsaved program data', async ({ page }) => {
 });
 
 // TC-009 — Duplicate program names are allowed in the live app
-test('TC-009: duplicate program name is allowed in the live app', async ({ page, trackProgram }) => {
+test('TC-009: duplicate program name is allowed in the live app', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -156,7 +156,7 @@ test('TC-009: duplicate program name is allowed in the live app', async ({ page,
 });
 
 // TC-010 — Server/API failure does not show false success
-test('TC-010: failed create shows error and keeps data recoverable', async ({ page }) => {
+test('TC-010: failed create shows error and keeps data recoverable', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('API Failure Test Program');
   const description = 'Testing error handling';
@@ -186,7 +186,7 @@ test('TC-010: failed create shows error and keeps data recoverable', async ({ pa
 });
 
 // TC-011 — Minimum valid Program Name (single character)
-test('TC-011: single-character Program Name is accepted', async ({ page, trackProgram }) => {
+test('TC-011: single-character Program Name is accepted', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('A');
   const description = 'Single character name test';
@@ -199,7 +199,7 @@ test('TC-011: single-character Program Name is accepted', async ({ page, trackPr
 });
 
 // TC-012 — Program Name at maximum allowed length (100 chars per Confluence spec)
-test('TC-012: program name at 100 characters is accepted', async ({ page, trackProgram }) => {
+test('TC-012: program name at 100 characters is accepted', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const suffix = String(Date.now());
   const baseName = 'A'.repeat(Math.max(1, 100 - suffix.length - 1));
@@ -215,7 +215,7 @@ test('TC-012: program name at 100 characters is accepted', async ({ page, trackP
 });
 
 // TC-013 — Program Name exceeding 100 characters is accepted in the live app
-test('TC-013: program name exceeding 100 characters is accepted in the live app', async ({
+test('TC-013: program name exceeding 100 characters is accepted in the live app', { tag: '@regression' }, async ({
   page,
   trackProgram,
 }) => {
@@ -230,7 +230,7 @@ test('TC-013: program name exceeding 100 characters is accepted in the live app'
 });
 
 // TC-014 — Empty Description is allowed
-test('TC-014: program can be created with empty Description', async ({ page, trackProgram }) => {
+test('TC-014: program can be created with empty Description', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Mobile App Development 2026');
 
@@ -248,7 +248,7 @@ test('TC-014: program can be created with empty Description', async ({ page, tra
 });
 
 // TC-015 — Description at maximum allowed length
-test('TC-015: long Description is stored correctly', async ({ page, trackProgram }) => {
+test('TC-015: long Description is stored correctly', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('UX Design Bootcamp');
   const description = 'D'.repeat(500);
@@ -262,7 +262,7 @@ test('TC-015: long Description is stored correctly', async ({ page, trackProgram
 });
 
 // TC-016 — Special characters in Program Name
-test('TC-016: program name with special characters is handled safely', async ({ page, trackProgram }) => {
+test('TC-016: program name with special characters is handled safely', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('C++ & C# Programming (2026)');
   const description = 'Languages: C++, C#, and scripting';
@@ -275,7 +275,7 @@ test('TC-016: program name with special characters is handled safely', async ({ 
 });
 
 // TC-017 — Unicode and emoji in fields
-test('TC-017: unicode Program Name and Description render correctly', async ({ page, trackProgram }) => {
+test('TC-017: unicode Program Name and Description render correctly', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('日本語プログラム 2026');
   const description = 'Multilingual curriculum 🎓';
@@ -289,7 +289,7 @@ test('TC-017: unicode Program Name and Description render correctly', async ({ p
 });
 
 // TC-018 — Leading/trailing whitespace is preserved in the live app (not trimmed)
-test('TC-018: leading and trailing whitespace in Program Name is preserved in the live app', async ({
+test('TC-018: leading and trailing whitespace in Program Name is preserved in the live app', { tag: '@regression' }, async ({
   page,
   trackProgram,
 }) => {
@@ -306,7 +306,7 @@ test('TC-018: leading and trailing whitespace in Program Name is preserved in th
 });
 
 // TC-019 — Program Name with only whitespace
-test('TC-019: whitespace-only Program Name is treated as empty', async ({ page }) => {
+test('TC-019: whitespace-only Program Name is treated as empty', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await programs.goto();
   await programs.openNewProgramForm();
@@ -317,7 +317,7 @@ test('TC-019: whitespace-only Program Name is treated as empty', async ({ page }
 });
 
 // TC-020 — HTML/script injection in Description
-test('TC-020: malicious input in Description does not execute in UI', async ({ page, trackProgram }) => {
+test('TC-020: malicious input in Description does not execute in UI', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Security Test Program');
   const description = "<script>alert('xss')</script>";
@@ -336,7 +336,7 @@ test('TC-020: malicious input in Description does not execute in UI', async ({ p
 });
 
 // TC-021 — Double-click Create: live app may create more than one; track every UUID for cleanup
-test('TC-021: double-click Create creates program entry(s) and all are tracked for cleanup', async ({
+test('TC-021: double-click Create creates program entry(s) and all are tracked for cleanup', { tag: '@regression' }, async ({
   page,
   trackProgram,
 }) => {
@@ -374,7 +374,7 @@ test('TC-021: double-click Create creates program entry(s) and all are tracked f
 });
 
 // TC-022 — Newline characters in Description
-test('TC-022: multi-line Description is preserved', async ({ page, trackProgram }) => {
+test('TC-022: multi-line Description is preserved', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('DevOps Pipeline Program');
   const description = 'Week 1: CI/CD basics\nWeek 2: Kubernetes\nWeek 3: Monitoring';
@@ -387,7 +387,7 @@ test('TC-022: multi-line Description is preserved', async ({ page, trackProgram 
 });
 
 // TC-023 — AI Generation Config section expands and collapses
-test('TC-023: AI Generation Config section expands and collapses', async ({ page }) => {
+test('TC-023: AI Generation Config section expands and collapses', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await programs.goto();
   await programs.openNewProgramForm();
@@ -407,7 +407,7 @@ test('TC-023: AI Generation Config section expands and collapses', async ({ page
 });
 
 // TC-024 — Programs page table layout
-test('TC-024: programs page shows table with program name and description', async ({
+test('TC-024: programs page shows table with program name and description', { tag: '@regression' }, async ({
   page,
   trackProgram,
 }) => {
@@ -427,7 +427,7 @@ test('TC-024: programs page shows table with program name and description', asyn
 });
 
 // TC-025 — Modal X button closes without saving
-test('TC-025: modal X button closes without saving', async ({ page }) => {
+test('TC-025: modal X button closes without saving', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('X Close Draft');
 
@@ -441,7 +441,7 @@ test('TC-025: modal X button closes without saving', async ({ page }) => {
 });
 
 // TC-026 — Program without description shows name-only row
-test('TC-026: program without description shows name-only row', async ({ page, trackProgram }) => {
+test('TC-026: program without description shows name-only row', { tag: '@regression' }, async ({ page, trackProgram }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Name Only Program');
 
