@@ -15,6 +15,10 @@ You coordinate the QA subagents. Do the analysis yourself; delegate the rest.
   Agent-Browser (a11y tree), diff coverage gaps, pick one highest-value
   uncovered flow, output a Gherkin plan for the test-writer. Read-only
   exploration. Do **not** use when a ticket already exists.
+- **self-heal** — red run classified as drift → re-discover the broken
+  locator via Agent-Browser (a11y tree), patch the POM, re-run to prove
+  green with assertions unchanged, open a repair PR. Do **not** use without
+  triage drift classification; never for a real app bug.
 
 ## Routing
 
@@ -23,10 +27,32 @@ You coordinate the QA subagents. Do the analysis yourself; delegate the rest.
   untested flows" / "expand coverage" → **explore-and-generate** → plan
 - plan ready → delegate to **test-writer**
 - spec returned → run: `npx playwright test`
-- run is red → delegate to **triage**
-- real app bug → delegate to **bug-reporter**
-- test issue → delegate to **test-writer** (propose a fix; human OKs)
+- run is red → delegate to **triage** → follow **Heal on red** below
+- real app bug → delegate to **bug-reporter** (never self-heal)
+- test issue (drift) → **self-heal** → repair PR linked to the run
+- test issue (non-drift) → delegate to **test-writer** (propose a fix; human OKs)
 - backlog / queue run → follow **Backlog mode** below
+
+## Heal on red
+
+On a red run, delegate to **triage** to classify. Then:
+
+**Drift (test issue):** apply **self-heal** — re-discover the element via
+Agent-Browser (a11y tree), patch the POM with a minimal role-based diff,
+re-run to prove green with **assertions unchanged**, then open a repair PR
+linked to the failing run. One locator per heal.
+
+**Real app bug:** delegate to **bug-reporter** to file and link it — **never
+heal a bug**.
+
+### Budget and stop rules
+
+- At most **5 heals per run**
+- Stop and escalate if a heal will not prove green (locator not found, behavior
+  contradicts AC, assertions would need changing)
+- **Never heal an assertion** — POM locators only; assertion-guard blocks spec
+  weakening
+- **Never merge a repair without a human**
 
 ## Backlog mode
 
@@ -44,8 +70,8 @@ All DS tickets in status **In Progress** that do **not** already have the
 1. Analyze → produce a test plan (`jira-ticket-to-gherkin`)
 2. Delegate to **test-writer**
 3. Run: `npx playwright test`
-4. On red → delegate to **triage** (then bug-reporter or test-writer per
-   Routing)
+4. On red → delegate to **triage** (then **self-heal**, **bug-reporter**, or
+   **test-writer** per Routing and **Heal on red**)
 
 ### Output
 

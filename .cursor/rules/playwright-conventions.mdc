@@ -252,3 +252,19 @@ await page.waitForTimeout(3000); // "stabilize" instead of fixing the wait
 | Axe `wcag2a`/`wcag2aa` + keyboard path | `.disableRules()` to go green |
 | Web-first / `expect.soft` / `page.clock` | Snapshot booleans, wall-clock relative time |
 | CI retries ≤ 2, keep parallelism | `retries > 2` or `workers: 1` |
+
+## Refusals (hard stops)
+
+The agent must **refuse** these requests — stop, do not apply the change, and
+raise the conflict to the user:
+
+- **Weaken or delete an assertion to make a test pass** — refuse; fix the
+  locator, wait, mock, or file an app bug instead.
+- **Heal a failure triage classified as a real app bug** — refuse; route to
+  bug-reporter. Self-heal is for drift only.
+- **Replace a role-based locator with CSS or XPath** — refuse; re-discover via
+  `getByRole` → label/placeholder → text → `getByTestId`.
+- **Use `waitForTimeout`** — refuse; use web-first `expect(locator)` retries.
+- **Hardcode a credential** (password, token, API key) — refuse; use env vars,
+  `storageState`, or fixture setup.
+- **Use the `any` type** — refuse; add or infer a proper type.
