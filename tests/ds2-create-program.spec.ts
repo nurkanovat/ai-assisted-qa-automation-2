@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   await loginAsAdmin(page);
 });
 
-test('TC-001: edit modal shows existing Program Name and Description values', async ({ page }) => {
+test('TC-001: edit modal shows existing Program Name and Description values', { tag: '@smoke' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -27,7 +27,7 @@ test('TC-001: edit modal shows existing Program Name and Description values', as
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(description);
 });
 
-test('TC-002: renamed program appears in the list immediately after Save', async ({ page }) => {
+test('TC-002: renamed program appears in the list immediately after Save', { tag: '@smoke' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const updatedName = `${programName} - Updated`;
@@ -41,7 +41,7 @@ test('TC-002: renamed program appears in the list immediately after Save', async
   await expect(programs.programRow(programName)).not.toBeVisible();
 });
 
-test('TC-003: partial edit updates only the modified field', async ({ page }) => {
+test('TC-003: partial edit updates only the modified field', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -56,7 +56,7 @@ test('TC-003: partial edit updates only the modified field', async ({ page }) =>
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(revised);
 });
 
-test('TC-004: program list updates in place after edit without reload', async ({ page }) => {
+test('TC-004: program list updates in place after edit without reload', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Data Science 2026');
   const updatedName = `${programName} - Advanced Track`;
@@ -69,7 +69,7 @@ test('TC-004: program list updates in place after edit without reload', async ({
   await expect(programs.programRow(updatedName)).toBeVisible();
 });
 
-test('TC-005: full edit of Program Name and Description persists correctly', async ({ page }) => {
+test('TC-005: full edit of Program Name and Description persists correctly', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Cybersecurity Fundamentals');
   const updatedName = `${programName} 2026`;
@@ -84,7 +84,7 @@ test('TC-005: full edit of Program Name and Description persists correctly', asy
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(updatedDescription);
 });
 
-test('TC-006: save without modifications keeps program data intact', async ({ page }) => {
+test('TC-006: save without modifications keeps program data intact', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Mobile App Development 2026');
   const description = 'iOS and Android development';
@@ -98,7 +98,7 @@ test('TC-006: save without modifications keeps program data intact', async ({ pa
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(description);
 });
 
-test('TC-007: empty Program Name blocks save on edit', async ({ page }) => {
+test('TC-007: empty Program Name blocks save on edit', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -109,7 +109,7 @@ test('TC-007: empty Program Name blocks save on edit', async ({ page }) => {
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-008: cleared Program Name does not persist via UI', async ({ page }) => {
+test('TC-008: cleared Program Name does not persist via UI', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -122,7 +122,7 @@ test('TC-008: cleared Program Name does not persist via UI', async ({ page }) =>
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-009: cancel/close discards unsaved edit changes', async ({ page }) => {
+test('TC-009: cancel/close discards unsaved edit changes', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -138,7 +138,7 @@ test('TC-009: cancel/close discards unsaved edit changes', async ({ page }) => {
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(description);
 });
 
-test('TC-010: non-admin users cannot edit programs', async ({ page }) => {
+test('TC-010: non-admin users cannot edit programs', { tag: '@sanity' }, async ({ page }) => {
   test.skip(
     !nonAdminEmail || !nonAdminPassword,
     'DIDAXIS_NONADMIN_EMAIL and DIDAXIS_NONADMIN_PASSWORD must be set in .env',
@@ -157,7 +157,7 @@ test('TC-010: non-admin users cannot edit programs', async ({ page }) => {
   }
 });
 
-test('TC-011: renaming to an existing program name is allowed in the live app', async ({ page }) => {
+test('TC-011: renaming to an existing program name is allowed in the live app', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const existingName = uniqueName('Web Development 2026');
   const targetName = uniqueName('Data Science 2026');
@@ -171,7 +171,7 @@ test('TC-011: renaming to an existing program name is allowed in the live app', 
   await expect(await programs.countProgramsNamed(existingName)).toBeGreaterThanOrEqual(2);
 });
 
-test('TC-012: failed save shows error and keeps recoverable form data', async ({ page }) => {
+test('TC-012: failed save shows error and keeps recoverable form data', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const updatedName = uniqueName('API Failure Edit Test');
@@ -199,7 +199,7 @@ test('TC-012: failed save shows error and keeps recoverable form data', async ({
   await expect(programs.programRow(updatedName)).not.toBeVisible();
 });
 
-test('TC-013: save edit on deleted program shows error', async ({ page }) => {
+test('TC-013: save edit on deleted program shows error', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -223,7 +223,7 @@ test('TC-013: save edit on deleted program shows error', async ({ page }) => {
   await expect(programs.editProgramModal.dialog).toBeVisible();
 });
 
-test('TC-014: single-character Program Name is accepted on edit', async ({ page }) => {
+test('TC-014: single-character Program Name is accepted on edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const singleChar = uniqueName('A');
@@ -235,7 +235,7 @@ test('TC-014: single-character Program Name is accepted on edit', async ({ page 
   await expect(programs.programRow(singleChar)).toBeVisible();
 });
 
-test('TC-015: program name at maximum allowed length is accepted on edit', async ({ page }) => {
+test('TC-015: program name at maximum allowed length is accepted on edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const maxLengthName = uniqueName(
@@ -249,7 +249,7 @@ test('TC-015: program name at maximum allowed length is accepted on edit', async
   await expect(programs.programRow(maxLengthName).first()).toBeVisible();
 });
 
-test('TC-016: program name exceeding 256 characters is accepted on edit', async ({ page }) => {
+test('TC-016: program name exceeding 256 characters is accepted on edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const overMaxName = uniqueName('X'.repeat(240));
@@ -261,7 +261,7 @@ test('TC-016: program name exceeding 256 characters is accepted on edit', async 
   await expect(programs.programRow(overMaxName).first()).toBeVisible();
 });
 
-test('TC-017: empty Description is allowed on edit', async ({ page }) => {
+test('TC-017: empty Description is allowed on edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -274,7 +274,7 @@ test('TC-017: empty Description is allowed on edit', async ({ page }) => {
   await expect(programs.editProgramModal.descriptionInput).toHaveValue('');
 });
 
-test('TC-018: long Description is stored correctly after edit', async ({ page }) => {
+test('TC-018: long Description is stored correctly after edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('UX Design Bootcamp');
   const longDescription = 'D'.repeat(2000);
@@ -287,7 +287,7 @@ test('TC-018: long Description is stored correctly after edit', async ({ page })
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(longDescription);
 });
 
-test('TC-019: special characters in edited fields render safely', async ({ page }) => {
+test('TC-019: special characters in edited fields render safely', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const specialName = uniqueName('C++ & C# Programming (2026)');
@@ -300,7 +300,7 @@ test('TC-019: special characters in edited fields render safely', async ({ page 
   await expect(programs.programRow(specialName)).toBeVisible();
 });
 
-test('TC-020: unicode Program Name and emoji Description render correctly after edit', async ({ page }) => {
+test('TC-020: unicode Program Name and emoji Description render correctly after edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const unicodeName = uniqueName('日本語プログラム 2026');
@@ -315,7 +315,7 @@ test('TC-020: unicode Program Name and emoji Description render correctly after 
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(emojiDescription);
 });
 
-test('TC-021: leading and trailing whitespace in Program Name is stored as entered', async ({ page }) => {
+test('TC-021: leading and trailing whitespace in Program Name is stored as entered', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const trimmedBase = uniqueName('Web Development 2026 - Updated');
@@ -328,7 +328,7 @@ test('TC-021: leading and trailing whitespace in Program Name is stored as enter
   await expect(programs.programRow(paddedName)).toBeVisible();
 });
 
-test('TC-022: whitespace-only Program Name is rejected on edit', async ({ page }) => {
+test('TC-022: whitespace-only Program Name is rejected on edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -339,7 +339,7 @@ test('TC-022: whitespace-only Program Name is rejected on edit', async ({ page }
   await expect(programs.programRow(programName)).toBeVisible();
 });
 
-test('TC-023: malicious input in Description does not execute in UI after edit', async ({ page }) => {
+test('TC-023: malicious input in Description does not execute in UI after edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = "<script>alert('xss')</script>";
@@ -357,7 +357,7 @@ test('TC-023: malicious input in Description does not execute in UI after edit',
   expect(dialogTriggered).toBe(false);
 });
 
-test('TC-024: double-click Save produces exactly one updated program row', async ({ page }) => {
+test('TC-024: double-click Save produces exactly one updated program row', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Cloud Computing 2026');
   const updatedName = `${programName} - Enterprise`;
@@ -370,7 +370,7 @@ test('TC-024: double-click Save produces exactly one updated program row', async
   await expect(await programs.countProgramsNamed(updatedName)).toBe(1);
 });
 
-test('TC-025: multi-line Description is preserved on edit', async ({ page }) => {
+test('TC-025: multi-line Description is preserved on edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('DevOps Pipeline Program');
   const description = 'Week 1: CI/CD basics\nWeek 2: Kubernetes\nWeek 3: Monitoring';
@@ -383,7 +383,7 @@ test('TC-025: multi-line Description is preserved on edit', async ({ page }) => 
   await expect(programs.editProgramModal.descriptionInput).toHaveValue(description);
 });
 
-test('TC-026: edit with unchanged program name does not trigger duplicate error', async ({ page }) => {
+test('TC-026: edit with unchanged program name does not trigger duplicate error', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const updatedDescription = 'Minor description tweak only';

@@ -12,7 +12,7 @@ test.fixme('Programs page has no accessibility violations', { tag: '@regression'
   await expect(results.violations).toEqual([]);
 });
 
-test.fixme('New Program modal has no accessibility violations when scoped', async ({ page }) => {
+test.fixme('New Program modal has no accessibility violations when scoped', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await programs.goto();
   await programs.openNewProgramForm();

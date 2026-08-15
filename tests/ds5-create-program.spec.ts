@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
   await loginAsAdmin(page);
 });
 
-test('TC-001: program list displays name and description for each program', async ({ page }) => {
+test('TC-001: program list displays name and description for each program', { tag: '@smoke' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programOne = uniqueName('Web Development 2026');
   const programTwo = uniqueName('Data Science 2026');
@@ -29,7 +29,7 @@ test('TC-001: program list displays name and description for each program', asyn
   await expect(programs.programDescription(programTwo, 'Introduction to statistics and machine learning')).toBeVisible();
 });
 
-test('TC-002: list renders every seeded program without omission', async ({ page }) => {
+test('TC-002: list renders every seeded program without omission', { tag: '@smoke' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const names = [
     uniqueName('Web Development 2026'),
@@ -45,7 +45,7 @@ test('TC-002: list renders every seeded program without omission', async ({ page
   }
 });
 
-test('TC-003: empty state message is shown when programs API returns no programs', async ({ page }) => {
+test('TC-003: empty state message is shown when programs API returns no programs', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await page.route('**/api/programs', async (route) => {
     if (route.request().method() === 'GET') {
@@ -64,7 +64,7 @@ test('TC-003: empty state message is shown when programs API returns no programs
   await expect(programs.newProgramButtonAlt).not.toBeVisible();
 });
 
-test('TC-004: empty state includes prompt to create the first program', async ({ page }) => {
+test('TC-004: empty state includes prompt to create the first program', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   await page.route('**/api/programs', async (route) => {
     if (route.request().method() === 'GET') {
@@ -83,7 +83,7 @@ test('TC-004: empty state includes prompt to create the first program', async ({
   await expect(programs.selectProgramPrompt).not.toBeVisible();
 });
 
-test('TC-005: first created program replaces empty state with list row', async ({ page }) => {
+test('TC-005: first created program replaces empty state with list row', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -97,7 +97,7 @@ test('TC-005: first created program replaces empty state with list row', async (
   await expect(programs.noProgramsCreatedMessage).not.toBeVisible();
 });
 
-test('TC-006: program list persists after page refresh', async ({ page }) => {
+test('TC-006: program list persists after page refresh', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -109,7 +109,7 @@ test('TC-006: program list persists after page refresh', async ({ page }) => {
   await expect(programs.programDescription(programName, description)).toBeVisible();
 });
 
-test('TC-007: empty state is not shown when programs exist', async ({ page }) => {
+test('TC-007: empty state is not shown when programs exist', { tag: '@sanity' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -118,7 +118,7 @@ test('TC-007: empty state is not shown when programs exist', async ({ page }) =>
   await expect(programs.noProgramsCreatedMessage).not.toBeVisible();
 });
 
-test('TC-008: deleted program is removed from displayed list', async ({ page }) => {
+test('TC-008: deleted program is removed from displayed list', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const deleteName = uniqueName('Test Program');
   const keepName = uniqueName('Data Science 2026');
@@ -131,7 +131,7 @@ test('TC-008: deleted program is removed from displayed list', async ({ page }) 
   await expect(programs.programDescription(keepName, 'Introduction to statistics and machine learning')).toBeVisible();
 });
 
-test('TC-009: list shows only intended program details per row', async ({ page }) => {
+test('TC-009: list shows only intended program details per row', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -142,7 +142,7 @@ test('TC-009: list shows only intended program details per row', async ({ page }
   await expect(programs.programRowUuidText(programName)).not.toBeVisible();
 });
 
-test('TC-010: non-admin unauthorized access does not leak program data', async ({ page }) => {
+test('TC-010: non-admin unauthorized access does not leak program data', { tag: '@regression' }, async ({ page }) => {
   test.skip(
     !nonAdminEmail || !nonAdminPassword,
     'DIDAXIS_NONADMIN_EMAIL and DIDAXIS_NONADMIN_PASSWORD must be set in .env',
@@ -163,7 +163,7 @@ test('TC-010: non-admin unauthorized access does not leak program data', async (
   await expect(programs.programNameOnPage(programName)).not.toBeVisible();
 });
 
-test('TC-011: API failure does not show false empty state', async ({ page }) => {
+test('TC-011: API failure does not show false empty state', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'Full-stack web development program');
@@ -185,7 +185,7 @@ test('TC-011: API failure does not show false empty state', async ({ page }) => 
   await expect(programs.programsHeadingAny).toBeVisible();
 });
 
-test('TC-012: special characters display correctly in program list', async ({ page }) => {
+test('TC-012: special characters display correctly in program list', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('C++ & C# Programming (2026)');
   const description = 'Languages: C++, C#, and scripting';
@@ -195,7 +195,7 @@ test('TC-012: special characters display correctly in program list', async ({ pa
   await expect(programs.programDescription(programName, description)).toBeVisible();
 });
 
-test('TC-013: unicode program name and emoji description display correctly', async ({ page }) => {
+test('TC-013: unicode program name and emoji description display correctly', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('日本語プログラム 2026');
   const description = 'Multilingual curriculum 🎓';
@@ -205,7 +205,7 @@ test('TC-013: unicode program name and emoji description display correctly', asy
   await expect(programs.programDescription(programName, description)).toBeVisible();
 });
 
-test('TC-014: long program name displays without breaking layout', async ({ page }) => {
+test('TC-014: long program name displays without breaking layout', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName(
     'Advanced Web Development and Cloud Architecture Specialization Program Track 2026 Edition Alpha',
@@ -217,7 +217,7 @@ test('TC-014: long program name displays without breaking layout', async ({ page
   await expect(programs.programRowNameText(programName)).toBeVisible();
 });
 
-test('TC-015: long description displays without breaking layout', async ({ page }) => {
+test('TC-015: long description displays without breaking layout', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('DevOps Pipeline Program');
   const description = 'D'.repeat(500);
@@ -228,7 +228,7 @@ test('TC-015: long description displays without breaking layout', async ({ page 
   await expect(programs.programRowNameText(programName)).toBeVisible();
 });
 
-test('TC-016: empty description is displayed consistently', async ({ page }) => {
+test('TC-016: empty description is displayed consistently', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Mobile App Development 2026');
   await programs.goto();
@@ -240,7 +240,7 @@ test('TC-016: empty description is displayed consistently', async ({ page }) => 
   await expect(programs.programRowNullPlaceholder(programName)).not.toBeVisible();
 });
 
-test('TC-017: single program list displays correctly without empty-state message', async ({ page }) => {
+test('TC-017: single program list displays correctly without empty-state message', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const description = 'Full-stack web development program';
@@ -250,7 +250,7 @@ test('TC-017: single program list displays correctly without empty-state message
   await expect(programs.noProgramsCreatedMessage).not.toBeVisible();
 });
 
-test('TC-018: HTML in description is escaped in list display', async ({ page }) => {
+test('TC-018: HTML in description is escaped in list display', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Security Test Program');
   const description = "<script>alert('xss')</script>";
@@ -264,7 +264,7 @@ test('TC-018: HTML in description is escaped in list display', async ({ page }) 
   expect(dialogTriggered).toBe(false);
 });
 
-test.fixme('TC-019: duplicate program names display as separate rows', async ({ page }) => {
+test.fixme('TC-019: duplicate program names display as separate rows', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   await seedProgram(page, programName, 'First duplicate description');
@@ -273,7 +273,7 @@ test.fixme('TC-019: duplicate program names display as separate rows', async ({ 
   await expect(await programs.countProgramsNamed(programName)).toBe(2);
 });
 
-test('TC-020: large number of newly created programs all appear in the list', async ({ page }) => {
+test('TC-020: large number of newly created programs all appear in the list', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const prefix = uniqueName('Program');
   const names = Array.from({ length: 10 }, (_, index) => `${prefix}-${String(index + 1).padStart(3, '0')}`);
@@ -289,7 +289,7 @@ test('TC-020: large number of newly created programs all appear in the list', as
   }
 });
 
-test('TC-021: list reflects updated description after edit', async ({ page }) => {
+test('TC-021: list reflects updated description after edit', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('Web Development 2026');
   const originalDescription = 'Full-stack web development program';
@@ -302,7 +302,7 @@ test('TC-021: list reflects updated description after edit', async ({ page }) =>
   await expect(programs.programDescription(programName, revisedDescription)).toBeVisible();
 });
 
-test('TC-022: multi-line description is readable in program list', async ({ page }) => {
+test('TC-022: multi-line description is readable in program list', { tag: '@regression' }, async ({ page }) => {
   const programs = new ProgramsPage(page);
   const programName = uniqueName('DevOps Pipeline Program');
   const description = 'Week 1: CI/CD basics\nWeek 2: Kubernetes\nWeek 3: Monitoring';

@@ -65,7 +65,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
   test.fixme(
     'TC-001: valid program name is accepted and program is created',
     {
-      tag: '@a11y',
+      tag: '@regression',
       annotation: {
         type: 'issue',
         description:
@@ -98,7 +98,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     },
   );
 
-  test('TC-002: program name with ampersand and hyphen is created successfully', async ({
+  test('TC-002: program name with ampersand and hyphen is created successfully', { tag: '@sanity' }, async ({
     page,
     trackProgram,
   }) => {
@@ -114,7 +114,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.programRow(programName)).toBeVisible();
   });
 
-  test('TC-003: programming special characters in Program Name are accepted', async ({
+  test('TC-003: programming special characters in Program Name are accepted', { tag: '@sanity' }, async ({
     page,
     trackProgram,
   }) => {
@@ -130,7 +130,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.programRow(programName)).toBeVisible();
   });
 
-  test('TC-004: unicode Program Name is accepted', async ({ page, trackProgram }) => {
+  test('TC-004: unicode Program Name is accepted', { tag: '@sanity' }, async ({ page, trackProgram }) => {
     const programs = new ProgramsPage(page);
     const programName = uniqueName('日本語プログラム 2026');
     const description = 'Multilingual curriculum track';
@@ -143,7 +143,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.programRow(programName)).toBeVisible();
   });
 
-  test('TC-005: whitespace-only Program Name is rejected', async ({ page }) => {
+  test('TC-005: whitespace-only Program Name is rejected', { tag: '@sanity' }, async ({ page }) => {
     const programs = new ProgramsPage(page);
     const orphanDescription = uniqueName('Whitespace-only name validation test');
 
@@ -157,7 +157,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.textInTable(orphanDescription)).not.toBeVisible();
   });
 
-  test('TC-006: empty Program Name prevents submission', async ({ page }) => {
+  test('TC-006: empty Program Name prevents submission', { tag: '@sanity' }, async ({ page }) => {
     const programs = new ProgramsPage(page);
     const orphanDescription = uniqueName('Description without a program name');
 
@@ -172,6 +172,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
 
   test.fixme(
     'TC-007: duplicate Program Name on create shows error',
+    { tag: '@regression' },
     {
       annotation: {
         type: 'issue',
@@ -197,6 +198,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
 
   test.fixme(
     'TC-008: duplicate error retains form data for correction',
+    { tag: '@regression' },
     {
       annotation: {
         type: 'issue',
@@ -225,7 +227,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
   },
   );
 
-  test('TC-009: tab-only Program Name is rejected as empty', async ({ page }) => {
+  test('TC-009: tab-only Program Name is rejected as empty', { tag: '@regression' }, async ({ page }) => {
     const programs = new ProgramsPage(page);
     const orphanDescription = uniqueName('Tab-only name validation test');
 
@@ -239,7 +241,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.textInTable(orphanDescription)).not.toBeVisible();
   });
 
-  test('TC-010: mixed whitespace-only Program Name is rejected', async ({ page }) => {
+  test('TC-010: mixed whitespace-only Program Name is rejected', { tag: '@regression' }, async ({ page }) => {
     const programs = new ProgramsPage(page);
     const orphanDescription = uniqueName('Mixed whitespace validation test');
 
@@ -255,6 +257,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
 
   test.fixme(
     'TC-011: duplicate rejection leaves database unchanged after refresh',
+    { tag: '@regression' },
     {
       annotation: {
         type: 'issue',
@@ -279,7 +282,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
   },
   );
 
-  test('TC-012: duplicate check rejects case-variant names', async ({ page, trackProgram }) => {
+  test('TC-012: duplicate check rejects case-variant names', { tag: '@regression' }, async ({ page, trackProgram }) => {
     const programs = new ProgramsPage(page);
     const programName = uniqueName('Web Development 2026');
     const lowercaseName = programName.toLowerCase();
@@ -297,6 +300,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
 
   test.fixme(
     'TC-013: duplicate detected after trimming padded program name',
+    { tag: '@regression' },
     {
       annotation: {
         type: 'issue',
@@ -323,6 +327,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
 
   test.fixme(
     'TC-014: valid padded program name is trimmed on create',
+    { tag: '@regression' },
     {
       annotation: {
         type: 'issue',
@@ -346,7 +351,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
   },
   );
 
-  test('TC-015: single-character Program Name is accepted', async ({ page, trackProgram }) => {
+  test('TC-015: single-character Program Name is accepted', { tag: '@regression' }, async ({ page, trackProgram }) => {
     const programs = new ProgramsPage(page);
     const programName = uniqueName('A');
     const description = 'Single character name boundary test';
@@ -359,7 +364,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.programRow(programName)).toBeVisible();
   });
 
-  test('TC-016: program name at maximum allowed length is accepted', async ({ page, trackProgram }) => {
+  test('TC-016: program name at maximum allowed length is accepted', { tag: '@regression' }, async ({ page, trackProgram }) => {
     const programs = new ProgramsPage(page);
     const suffix = String(Date.now());
     const baseName = 'A'.repeat(Math.max(1, 100 - suffix.length - 1));
@@ -376,7 +381,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.programRow(programName).first()).toBeVisible();
   });
 
-  test('TC-017: program name exceeding maximum length is rejected', async ({ page }) => {
+  test('TC-017: program name exceeding maximum length is rejected', { tag: '@regression' }, async ({ page }) => {
     const programs = new ProgramsPage(page);
     const programName = `L${'X'.repeat(119)}`;
     expect(programName.length).toBe(120);
@@ -395,6 +400,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
 
   test.fixme(
     'TC-018: duplicate program name rejected on edit',
+    { tag: '@regression' },
     {
       annotation: {
         type: 'issue',
@@ -419,7 +425,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
   },
   );
 
-  test('TC-019: edit with same program name does not trigger duplicate error', async ({
+  test('TC-019: edit with same program name does not trigger duplicate error', { tag: '@regression' }, async ({
     page,
     trackProgram,
   }) => {
@@ -437,7 +443,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.programDescription(programName, updatedDescription)).toBeVisible();
   });
 
-  test('TC-020: emoji in Program Name is accepted', async ({ page, trackProgram }) => {
+  test('TC-020: emoji in Program Name is accepted', { tag: '@regression' }, async ({ page, trackProgram }) => {
     const programs = new ProgramsPage(page);
     const programName = uniqueName('Cloud Computing 2026 🎓');
     const description = 'Cloud platforms and DevOps';
@@ -450,7 +456,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
     await expect(programs.programRow(programName)).toBeVisible();
   });
 
-  test('TC-021: HTML in program name is sanitized or rejected', async ({ page, trackProgram }) => {
+  test('TC-021: HTML in program name is sanitized or rejected', { tag: '@regression' }, async ({ page, trackProgram }) => {
     const programs = new ProgramsPage(page);
     const xssToken = `xss-${Date.now()}`;
     const xssName = `<script>alert('${xssToken}')</script>`;
@@ -490,6 +496,7 @@ test.describe('DS-3: Program name validation and duplicate prevention', () => {
 
   test.fixme(
     'TC-022: double submit on duplicate name does not create extra records',
+    { tag: '@regression' },
     {
       annotation: {
         type: 'issue',
